@@ -16,8 +16,8 @@
 
     @stack('styles')
 </head>
-<body class="bg-[#FAF9F6] text-gray-800 min-h-full flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
-    <!-- Header -->
+<body class="bg-[#FAF9F6] text-gray-800 min-h-full flex flex-col font-sans pb-20 md:pb-0 selection:bg-blue-100 selection:text-blue-900">
+    <!-- Unified Top Header -->
     @include('partials.header')
 
     <!-- Flash Notifications -->
@@ -30,6 +30,9 @@
 
     <!-- Footer -->
     @include('partials.footer')
+
+    <!-- Unified Dynamic Mobile Bottom Navigation Bar -->
+    @include('partials.bottom-nav')
 
     @stack('scripts')
 </body>

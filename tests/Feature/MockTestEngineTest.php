@@ -156,4 +156,89 @@ class MockTestEngineTest extends TestCase
         $resultPage->assertSee('Newton Second Law');
         $resultPage->assertSee('The SI unit of electric potential difference is the Volt');
     }
+
+    public function test_paid_mock_test_redirects_to_checkout_when_not_purchased(): void
+    {
+        $student = User::factory()->create([
+            'role' => 'student',
+            'is_active' => true,
+        ]);
+
+        $paidTest = MockTest::create([
+            'title' => 'AFCAT Premium Officer Test Series',
+            'slug' => 'afcat-premium-officer-test-series',
+            'duration_minutes' => 120,
+            'total_marks' => 300,
+            'pass_marks' => 150,
+            'is_free' => false,
+            'price' => 499.00,
+            'is_published' => true,
+        ]);
+
+        // Attempting to start paid test without purchase redirects to checkout
+        $response = $this->actingAs($student)->post(route('student.tests.start', $paidTest));
+        $response->assertRedirect(route('student.checkout.test', $paidTest));
+    }
+
+    public function test_student_can_purchase_and_unlock_mock_test_series(): void
+    {
+        $student = User::factory()->create([
+            'role' => 'student',
+            'is_active' => true,
+        ]);
+
+        $paidTest = MockTest::create([
+            'title' => 'CDS Combined Defence Exam Mock',
+            'slug' => 'cds-combined-defence-exam-mock',
+            'duration_minutes' => 120,
+            'total_marks' => 300,
+            'pass_marks' => 150,
+            'is_free' => false,
+            'price' => 499.00,
+            'is_published' => true,
+        ]);
+
+        // Complete checkout payment for test series
+        $checkoutResponse = $this->actingAs($student)->post(route('student.checkout.test.pay', $paidTest), [
+            'payment_method' => 'upi',
+        ]);
+
+        $order = \App\Models\Order::where('user_id', $student->id)->where('mock_test_id', $paidTest->id)->first();
+        $this->assertNotNull($order);
+        $this->assertEquals('paid', $order->status);
+        $this->assertEquals(499.00, (float) $order->amount);
+
+        $checkoutResponse->assertRedirect(route('student.orders.receipt', $order));
+
+        // Now student can view instructions and has access
+        $instructions = $this->actingAs($student)->get(route('student.tests.instructions', $paidTest));
+        $instructions->assertStatus(200);
+        $instructions->assertSee('I Have Read All Instructions — Begin Test');
+    }
+
+    public function test_student_can_view_official_order_receipt(): void
+    {
+        $student = User::factory()->create([
+            'role' => 'student',
+            'is_active' => true,
+        ]);
+
+        $order = \App\Models\Order::create([
+            'user_id' => $student->id,
+            'order_number' => 'NIR-20261026-TEST99',
+            'amount' => 499.00,
+            'currency' => 'INR',
+            'status' => 'paid',
+            'payment_gateway' => 'upi',
+            'payment_id' => 'tx_test123456',
+            'paid_at' => now(),
+            'notes' => 'Test order receipt',
+        ]);
+
+        $response = $this->actingAs($student)->get(route('student.orders.receipt', $order));
+        $response->assertStatus(200);
+        $response->assertSee('TAX INVOICE / RECEIPT');
+        $response->assertSee('NIR-20261026-TEST99');
+        $response->assertSee('499.00');
+    }
 }

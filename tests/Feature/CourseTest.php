@@ -117,4 +117,90 @@ class CourseTest extends TestCase
         $response->assertSee('Module 1: General English & Vocabulary');
         $response->assertSee('Comprehension & Grammar Strategy');
     }
+
+    public function test_can_view_dedicated_course_video_watch_page(): void
+    {
+        $category = ExamCategory::create([
+            'name' => 'NDA Exam',
+            'slug' => 'nda-exam',
+            'is_active' => true,
+        ]);
+
+        $course = Course::create([
+            'exam_category_id' => $category->id,
+            'title' => 'NDA 2026 Mathematics Masterclass',
+            'slug' => 'nda-2026-mathematics-masterclass',
+            'price' => 2999,
+            'is_published' => true,
+        ]);
+
+        $module = CourseModule::create([
+            'course_id' => $course->id,
+            'title' => 'Calculus & Vectors',
+            'sort_order' => 1,
+        ]);
+
+        $lesson1 = Lesson::create([
+            'course_module_id' => $module->id,
+            'title' => 'Limits and Continuity Introduction',
+            'video_provider' => 'youtube',
+            'video_id' => 'M9DoUszVCFc',
+            'duration_minutes' => 35,
+            'duration_text' => '35:55',
+            'is_preview' => true,
+            'sort_order' => 1,
+        ]);
+
+        $lesson2 = Lesson::create([
+            'course_module_id' => $module->id,
+            'title' => 'Differential Equations Drill',
+            'video_provider' => 'youtube',
+            'video_id' => '1kPEQ-MqlFI',
+            'duration_minutes' => 42,
+            'duration_text' => '42:10',
+            'is_preview' => false,
+            'sort_order' => 2,
+        ]);
+
+        // Visit dedicated watch view
+        $response = $this->get('/courses/' . $course->slug . '/watch');
+        $response->assertStatus(200);
+        $response->assertSee('NDA 2026 Mathematics Masterclass', false);
+        $response->assertSee('Course Lesson Directory');
+        $response->assertSee('2 Lessons Available');
+        $response->assertSee('Limits and Continuity Introduction');
+        $response->assertSee('Play');
+        $response->assertSee('35:55');
+    }
+
+    public function test_admin_can_save_manual_episodes(): void
+    {
+        $admin = \App\Models\User::factory()->create([
+            'role' => 'admin',
+        ]);
+
+        $course = Course::create([
+            'title' => 'CDS General Knowledge Series',
+            'slug' => 'cds-general-knowledge-series',
+            'price' => 1999,
+            'is_published' => true,
+        ]);
+
+        $response = $this->actingAs($admin)->post('/admin/courses/' . $course->id . '/save-episodes', [
+            'episodes' => [
+                ['title' => 'Indian Constitution & Polity', 'video_input' => 'https://www.youtube.com/watch?v=M9DoUszVCFc'],
+                ['title' => 'Modern History & Battles', 'video_input' => '<iframe src="https://www.youtube.com/embed/1kPEQ-MqlFI"></iframe>'],
+            ]
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('lessons', [
+            'title' => 'Indian Constitution & Polity',
+            'video_id' => 'M9DoUszVCFc',
+        ]);
+        $this->assertDatabaseHas('lessons', [
+            'title' => 'Modern History & Battles',
+            'video_id' => '1kPEQ-MqlFI',
+        ]);
+    }
 }

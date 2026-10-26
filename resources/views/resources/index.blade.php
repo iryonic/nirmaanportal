@@ -34,9 +34,9 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     @foreach($freeMockTests as $test)
-                        <div class="bg-gradient-to-r from-blue-50/80 to-indigo-50/50 rounded-2xl p-5 border border-blue-100 flex items-center justify-between shadow-2xs">
+                        <div class="bg-white rounded-xl p-5 border border-gray-200 flex items-center justify-between shadow-2xs">
                             <div>
-                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 uppercase">
+                                <span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-100 uppercase">
                                     {{ $test->examCategory ? $test->examCategory->name : 'Defence Mock' }}
                                 </span>
                                 <h3 class="text-sm font-bold text-gray-900 mt-2">{{ $test->title }}</h3>
@@ -46,7 +46,7 @@
                                     <span>🎯 {{ number_format($test->total_marks, 0) }} Marks</span>
                                 </div>
                             </div>
-                            <a href="{{ route('student.tests.instructions', $test->id) }}" class="px-5 py-2 rounded-full text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 shadow-xs transition flex-shrink-0">
+                            <a href="{{ route('student.tests.instructions', $test->id) }}" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 transition flex-shrink-0">
                                 Start Test
                             </a>
                         </div>

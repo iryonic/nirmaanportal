@@ -14,12 +14,12 @@
                 <span>&bull;</span>
                 <span class="text-blue-700">Platform Content &amp; CMS</span>
             </div>
-            <h1 class="text-xl font-black text-gray-900 tracking-tight">Website Content, FAQs &amp; Inquiries</h1>
+            <h1 class="text-xl font-bold text-gray-900 tracking-tight">Website Content, FAQs &amp; Inquiries</h1>
             <p class="text-xs text-gray-500 mt-0.5">Maintain academy contact information, homepage copy, FAQ accordion questions, and candidate inquiries.</p>
         </div>
 
         <!-- Tab Pills -->
-        <div class="flex items-center p-1.5 bg-gray-100 rounded-2xl text-xs font-bold self-start sm:self-auto">
+        <div class="flex items-center p-1.5 bg-gray-100 rounded-2xl text-xs font-semibold self-start sm:self-auto">
             <button @click="activeTab = 'settings'" 
                     :class="activeTab === 'settings' ? 'bg-white text-blue-700 shadow-xs' : 'text-gray-500 hover:text-gray-800'"
                     class="px-4 py-2 rounded-xl transition">
@@ -178,40 +178,40 @@
 
     <!-- Tab 3: Contact Inquiries -->
     <div x-show="activeTab === 'inquiries'" class="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-xs" style="display:none;">
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto w-full">
             <table class="w-full text-left text-xs text-gray-600">
                 <thead class="bg-gray-50/70 text-gray-400 uppercase text-[10px] font-bold border-b border-gray-100">
                     <tr>
-                        <th class="px-6 py-4">Sender Cadet</th>
-                        <th class="px-6 py-4">Inquiry Subject &amp; Note</th>
-                        <th class="px-6 py-4">Contact Phone</th>
-                        <th class="px-6 py-4">Received Date</th>
-                        <th class="px-6 py-4">Status</th>
-                        <th class="px-6 py-4 text-right">Action</th>
+                        <th class="px-6 py-4 whitespace-nowrap">Sender Cadet</th>
+                        <th class="px-6 py-4 whitespace-nowrap">Inquiry Subject &amp; Note</th>
+                        <th class="px-6 py-4 whitespace-nowrap">Contact Phone</th>
+                        <th class="px-6 py-4 whitespace-nowrap">Received Date</th>
+                        <th class="px-6 py-4 whitespace-nowrap">Status</th>
+                        <th class="px-6 py-4 whitespace-nowrap text-right">Action</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @forelse($inquiries as $inq)
                         <tr class="hover:bg-gray-50/60 transition">
-                            <td class="px-6 py-4 font-bold text-gray-900">
+                            <td class="px-6 py-4 font-bold text-gray-900 whitespace-nowrap">
                                 {{ $inq->name }}
                                 <span class="text-[10px] text-gray-400 font-normal block">{{ $inq->email }}</span>
                             </td>
                             <td class="px-6 py-4 max-w-sm">
-                                <strong class="text-gray-900 block">{{ $inq->subject }}</strong>
+                                <strong class="text-gray-900 block font-semibold">{{ $inq->subject }}</strong>
                                 <span class="text-gray-500 line-clamp-2 mt-0.5">{{ $inq->message }}</span>
                             </td>
-                            <td class="px-6 py-4 font-mono font-semibold">{{ $inq->phone ?? 'N/A' }}</td>
-                            <td class="px-6 py-4 text-gray-500">{{ $inq->created_at->format('d M, Y') }}</td>
-                            <td class="px-6 py-4">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase {{ $inq->status === 'new' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800' }}">
+                            <td class="px-6 py-4 font-mono font-semibold text-gray-700 whitespace-nowrap">{{ $inq->phone ?? 'N/A' }}</td>
+                            <td class="px-6 py-4 text-gray-500 whitespace-nowrap">{{ $inq->created_at->format('d M, Y') }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase {{ $inq->status === 'new' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800' }}">
                                     {{ $inq->status === 'new' ? '● New' : '● Handled' }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 text-right">
+                            <td class="px-6 py-4 whitespace-nowrap text-right">
                                 <form action="{{ route('admin.content.inquiries.toggle', $inq->id) }}" method="POST">
                                     @csrf
-                                    <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 transition">
+                                    <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 transition">
                                         {{ $inq->status === 'new' ? 'Mark Handled' : 'Mark New' }}
                                     </button>
                                 </form>
@@ -219,7 +219,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="py-12 text-center text-xs text-gray-400">No candidate contact messages recorded.</td>
+                            <td colspan="6" class="py-12 text-center text-xs text-gray-400 whitespace-nowrap">No candidate contact messages recorded.</td>
                         </tr>
                     @endforelse
                 </tbody>

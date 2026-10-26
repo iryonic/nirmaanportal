@@ -31,7 +31,7 @@
             <div class="lg:col-span-8 space-y-6">
                 
                 <!-- Video Container -->
-                <div class="bg-black rounded-3xl overflow-hidden aspect-video shadow-2xl relative border-4 border-white">
+                <div class="bg-black rounded-2xl overflow-hidden aspect-video border border-gray-200 relative shadow-2xs">
                     @if($lesson->video_id)
                         <iframe src="https://www.youtube-nocookie.com/embed/{{ $lesson->video_id }}?rel=0&modestbranding=1" 
                                 class="w-full h-full" 

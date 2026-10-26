@@ -16,6 +16,7 @@ class Lesson extends Model
         'title',
         'description',
         'duration_minutes',
+        'duration_text',
         'video_provider',
         'video_id',
         'is_preview',

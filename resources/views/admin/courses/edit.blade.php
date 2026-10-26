@@ -99,6 +99,122 @@
         </form>
     </div>
 
+    <!-- Bulk YouTube Playlist Importer & Multi-Episode Adder (Matching User Screenshot) -->
+    <div class="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-xs space-y-6" x-data="{ 
+        importing: false,
+        episodes: [
+            { title: 'Episode 1', video_input: '' },
+            { title: 'Episode 2', video_input: '' }
+        ],
+        addEpisode() {
+            this.episodes.push({ title: 'Episode ' + (this.episodes.length + 1), video_input: '' });
+        },
+        removeEpisode(idx) {
+            if (this.episodes.length > 1) {
+                this.episodes.splice(idx, 1);
+            }
+        }
+    }">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 gap-4">
+            <div>
+                <h2 class="text-base font-bold text-gray-900 uppercase tracking-tight text-amber-700">2. Episodes List (Paste Multiple Episode Links)</h2>
+                <p class="text-xs text-gray-500 mt-0.5">Add episode titles and YouTube or iframe links below, or auto-fetch complete YouTube playlists.</p>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button type="button" @click="addEpisode()" class="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-300 transition">
+                    <span>+ Add Episode</span>
+                </button>
+                <a href="{{ route('courses.watch', $course->slug) }}" target="_blank" class="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition">
+                    <span>Dedicated Video View ↗</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- BULK YOUTUBE PLAYLIST IMPORTER (AUTO-IMPORT ALL EPISODES) (Exact Match to Image 2) -->
+        <div class="rounded-2xl border-2 border-amber-300 bg-amber-50/40 p-5 space-y-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2 text-amber-900 font-extrabold text-xs uppercase tracking-wider">
+                    <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    <span>BULK YOUTUBE PLAYLIST IMPORTER (AUTO-IMPORT ALL EPISODES)</span>
+                </div>
+                <span class="text-[11px] font-bold text-amber-700">Paste Playlist URL</span>
+            </div>
+
+            <form action="{{ route('admin.courses.import-playlist', $course->id) }}" method="POST" @submit="importing = true" class="flex flex-col sm:flex-row gap-3">
+                @csrf
+                <div class="relative flex-grow">
+                    <input type="text" 
+                           name="playlist_url" 
+                           required 
+                           value="{{ old('playlist_url', $course->youtube_playlist_url) }}"
+                           placeholder="Paste YouTube Playlist link (e.g. https://www.youtube.com/playlist?list=...)" 
+                           class="w-full text-xs font-mono bg-white border border-amber-200 rounded-xl px-4 py-3 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-gray-800">
+                </div>
+                <button type="submit" 
+                        :disabled="importing"
+                        class="px-6 py-3 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 transition flex items-center justify-center space-x-2 flex-shrink-0 shadow-xs disabled:opacity-50">
+                    <svg x-show="!importing" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    <span x-show="!importing">Import Episodes</span>
+                    <span x-show="importing" style="display:none;" class="flex items-center space-x-1">
+                        <svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <span>Fetching Videos...</span>
+                    </span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Manual Multiple Episodes List (Matching Image 2) -->
+        <form action="{{ route('admin.courses.save-episodes', $course->id) }}" method="POST" class="space-y-4 pt-2">
+            @csrf
+            
+            <template x-for="(ep, index) in episodes" :key="index">
+                <div class="border border-gray-200 rounded-2xl p-4 sm:p-5 bg-white space-y-3 shadow-2xs hover:border-gray-300 transition">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-6 h-6 rounded-full bg-slate-900 text-white text-[11px] font-black flex items-center justify-center font-mono" x-text="index + 1"></span>
+                            <span class="text-xs font-black uppercase tracking-wider text-slate-800">EPISODE DETAILS</span>
+                        </div>
+                        <button type="button" @click="removeEpisode(index)" class="text-xs font-bold text-red-500 hover:text-red-700 transition" x-show="episodes.length > 1">
+                            Remove
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                        <div class="sm:col-span-5">
+                            <input type="text" 
+                                   :name="'episodes[' + index + '][title]'" 
+                                   x-model="ep.title"
+                                   required 
+                                   placeholder="Episode Title" 
+                                   class="w-full text-xs bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500">
+                        </div>
+                        <div class="sm:col-span-7">
+                            <input type="text" 
+                                   :name="'episodes[' + index + '][video_input]'" 
+                                   x-model="ep.video_input"
+                                   required 
+                                   placeholder="Paste YouTube Link or <iframe src='...'></iframe>" 
+                                   class="w-full text-xs font-mono bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Click to Add Another Episode (Dashed Card matching Image 2) -->
+            <button type="button" 
+                    @click="addEpisode()" 
+                    class="w-full py-4 border-2 border-dashed border-gray-300 hover:border-blue-500 rounded-2xl text-center text-xs font-bold text-gray-500 hover:text-blue-700 hover:bg-blue-50/30 transition flex items-center justify-center space-x-2">
+                <span>+ Click to Add Another Episode (Episode <span x-text="episodes.length + 1"></span>, <span x-text="episodes.length + 2"></span>...)</span>
+            </button>
+
+            <div class="flex justify-end pt-2">
+                <button type="submit" class="px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 transition shadow-xs">
+                    Save Manual Episodes
+                </button>
+            </div>
+        </form>
+    </div>
+
     <!-- Curriculum Modules & Lessons Manager -->
     <div class="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-xs space-y-6">
         <div class="flex items-center justify-between pb-4 border-b border-gray-100">

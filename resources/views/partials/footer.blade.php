@@ -1,4 +1,4 @@
-<footer class="bg-white border-t border-gray-100 mt-20">
+<footer class="bg-white border-t border-gray-100 mt-20 print:hidden">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <!-- Top Row -->
         <div class="flex flex-col md:flex-row items-center justify-between gap-6 pb-8 border-b border-gray-100">
@@ -12,8 +12,8 @@
             <!-- Navigation Links -->
             <div class="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-600 font-medium">
                 <a href="{{ route('courses.index') }}" class="hover:text-blue-700 transition">Courses</a>
-                <a href="{{ route('student.tests.index') }}" class="hover:text-blue-700 transition">Tests</a>
-                <a href="{{ route('student.orders') }}" class="hover:text-blue-700 transition">Payments</a>
+                <a href="{{ auth()->check() ? route('student.tests.index') : route('login') }}" class="hover:text-blue-700 transition">Tests</a>
+                <a href="{{ auth()->check() ? route('student.orders') : route('login') }}" class="hover:text-blue-700 transition">Payments</a>
                 <a href="{{ route('announcements') }}" class="hover:text-blue-700 transition">Announcements</a>
                 <a href="{{ route('about') }}" class="hover:text-blue-700 transition">About Us</a>
                 <a href="{{ route('contact') }}" class="hover:text-blue-700 transition">Contact</a>

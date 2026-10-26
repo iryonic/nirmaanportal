@@ -124,4 +124,13 @@ class MockTestManagementController extends Controller
 
         return view('admin.tests.attempts', compact('test', 'attempts'));
     }
+
+    public function toggleStatus(MockTest $test)
+    {
+        $test->is_published = !$test->is_published;
+        $test->save();
+
+        $label = $test->is_published ? 'published (live for candidates)' : 'moved to draft';
+        return back()->with('success', "Mock test '{$test->title}' has been {$label}.");
+    }
 }

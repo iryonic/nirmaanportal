@@ -99,4 +99,110 @@ class AuthTest extends TestCase
         $response->assertRedirect('/');
         $this->assertGuest();
     }
+
+    public function test_student_can_login_using_phone_number(): void
+    {
+        $student = User::factory()->create([
+            'email' => 'phonecadet@test.com',
+            'phone' => '+91 9876543210',
+            'password' => bcrypt('password123'),
+            'role' => 'student',
+            'is_active' => true,
+        ]);
+
+        $response = $this->post('/login', [
+            'email' => '9876543210',
+            'password' => 'password123',
+        ]);
+
+        $response->assertRedirect(route('student.dashboard'));
+        $this->assertAuthenticatedAs($student);
+    }
+
+    public function test_deactivated_student_cannot_login(): void
+    {
+        $student = User::factory()->create([
+            'email' => 'suspended@test.com',
+            'password' => bcrypt('password123'),
+            'role' => 'student',
+            'is_active' => false,
+        ]);
+
+        $response = $this->post('/login', [
+            'email' => 'suspended@test.com',
+            'password' => 'password123',
+        ]);
+
+        $response->assertSessionHasErrors('email');
+        $this->assertGuest();
+    }
+
+    public function test_login_rate_limiting_locks_out_after_5_failed_attempts(): void
+    {
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/login', [
+                'email' => 'brute@test.com',
+                'password' => 'wrongpass',
+            ]);
+        }
+
+        // 6th attempt should hit rate limiter lockout
+        $response = $this->post('/login', [
+            'email' => 'brute@test.com',
+            'password' => 'wrongpass',
+        ]);
+
+        $response->assertSessionHasErrors('email');
+        $errors = session('errors')->get('email');
+        $this->assertTrue(str_contains($errors[0], 'Too many failed sign-in attempts'));
+    }
+
+    public function test_password_recovery_and_reset_flow(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'resetme@test.com',
+            'password' => bcrypt('oldpassword123'),
+        ]);
+
+        // Request reset
+        $reqResponse = $this->post('/forgot-password', [
+            'email' => 'resetme@test.com',
+        ]);
+        $reqResponse->assertSessionHas('status');
+
+        $token = session('simulation_token');
+        $this->assertNotNull($token);
+
+        // Reset password
+        $resetResponse = $this->post('/reset-password', [
+            'token' => $token,
+            'email' => 'resetme@test.com',
+            'password' => 'newstrongpass123',
+            'password_confirmation' => 'newstrongpass123',
+        ]);
+
+        $resetResponse->assertRedirect(route('student.dashboard'));
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_custom_404_page_renders_cleanly(): void
+    {
+        $response = $this->get('/non-existent-defence-route-xyz');
+        $response->assertStatus(404);
+        $response->assertSee('Mission Objective Not Found');
+        $response->assertSee('HTTP 404');
+    }
+
+    public function test_custom_403_page_renders_cleanly(): void
+    {
+        $student = User::factory()->create([
+            'role' => 'student',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($student)->get(route('admin.dashboard'));
+        $response->assertStatus(403);
+        $response->assertSee('Security Clearance Restricted');
+        $response->assertSee('HTTP 403');
+    }
 }

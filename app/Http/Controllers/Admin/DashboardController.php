@@ -24,7 +24,7 @@ class DashboardController extends Controller
         $totalRevenue = Order::where('status', 'paid')->sum('amount');
         $newInquiriesCount = ContactInquiry::where('status', 'new')->count();
 
-        $recentOrders = Order::with(['user', 'course'])
+        $recentOrders = Order::with(['user', 'course', 'mockTest'])
             ->latest()
             ->take(6)
             ->get();

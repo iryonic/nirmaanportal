@@ -1,22 +1,23 @@
 @extends('layouts.admin')
 
-@section('title', 'Student Profile: ' . $student->name . ' — Admin')
-@section('header_title', 'Cadet Record: ' . $student->name)
+@section('title', 'Cadet Dossier: ' . $student->name . ' — Admin Command')
+@section('header_title', 'Cadet Dossier: ' . $student->name)
 
 @section('content')
-<div class="space-y-8 max-w-5xl mx-auto">
+<div class="space-y-6 max-w-5xl mx-auto">
     
-    <div class="flex items-center justify-between bg-white rounded-2xl p-4 border border-gray-100 shadow-2xs">
+    <!-- Top Action Breadcrumb Bar -->
+    <div class="flex items-center justify-between bg-white rounded-2xl p-4 sm:p-5 border border-gray-200 shadow-2xs">
         <div class="flex items-center space-x-2 text-xs font-semibold text-gray-500">
             <a href="{{ route('admin.dashboard') }}" class="hover:text-blue-700">HQ Dashboard</a>
             <span>&bull;</span>
-            <a href="{{ route('admin.students.index') }}" class="hover:text-blue-700">Cadets</a>
+            <a href="{{ route('admin.students.index') }}" class="hover:text-blue-700">Cadets Roster</a>
             <span>&bull;</span>
             <span class="text-blue-700 font-bold truncate max-w-xs">{{ $student->name }}</span>
         </div>
         <div class="flex items-center space-x-3">
-            <a href="{{ route('admin.students.index') }}" class="text-xs font-bold text-gray-500 hover:text-gray-800">
-                ← Back to Cadets Roster
+            <a href="{{ route('admin.students.index') }}" class="text-xs font-bold text-gray-600 hover:text-gray-900 transition">
+                ← Back to Cadets
             </a>
             <form action="{{ route('admin.students.toggle', $student->id) }}" method="POST">
                 @csrf
@@ -27,79 +28,148 @@
         </div>
     </div>
 
-    <!-- Student Info Card -->
-    <div class="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+    <!-- Cadet Profile Info Card -->
+    <div class="bg-white rounded-2xl p-6 sm:p-8 border border-gray-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div class="flex items-center space-x-4">
-            <div class="w-16 h-16 rounded-full bg-blue-100 text-blue-800 font-extrabold flex items-center justify-center text-xl">
+            <div class="w-16 h-16 rounded-2xl bg-blue-100 text-blue-800 font-bold flex items-center justify-center text-2xl border border-blue-200">
                 {{ strtoupper(substr($student->name, 0, 1)) }}
             </div>
             <div>
                 <h1 class="text-xl font-bold text-gray-900">{{ $student->name }}</h1>
-                <p class="text-xs text-gray-500">{{ $student->email }} • {{ $student->phone ?? 'No Phone' }}</p>
+                <p class="text-xs text-gray-500 font-mono">{{ $student->email }} • {{ $student->phone ?? 'No Phone' }}</p>
                 <div class="mt-2 flex items-center space-x-2">
-                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-100">
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
                         Target: {{ $student->target_exam ?? 'Defence Forces' }}
                     </span>
-                    <span class="text-xs text-gray-400">Joined {{ $student->created_at->format('d M, Y') }}</span>
+                    <span class="text-xs text-gray-400 font-medium">Joined {{ $student->created_at->format('d M, Y') }}</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase {{ $student->is_active ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200' }}">
+                        {{ $student->is_active ? '● Active' : '● Suspended' }}
+                    </span>
                 </div>
             </div>
         </div>
 
         <!-- Manual Enrollment Grant Form -->
-        <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200/60 sm:w-80">
-            <h4 class="text-xs font-bold text-gray-700 mb-2">+ Grant Manual Course Access</h4>
+        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 sm:w-80">
+            <h4 class="text-xs font-bold text-gray-800 mb-2">+ Grant Manual Course Access</h4>
             <form action="{{ route('admin.students.enroll', $student->id) }}" method="POST" class="space-y-2">
                 @csrf
-                <select name="course_id" required class="w-full text-xs bg-white border border-gray-200 rounded-xl px-3 py-2 outline-none">
-                    <option value="">Select Course</option>
+                <select name="course_id" required class="w-full text-xs bg-white border border-gray-300 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-600">
+                    <option value="">Select Course Batch</option>
                     @foreach($courses as $c)
                         <option value="{{ $c->id }}">{{ $c->title }}</option>
                     @endforeach
                 </select>
-                <button type="submit" class="w-full py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition">
-                    Enroll Student
+                <button type="submit" class="w-full py-2 rounded-xl text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 transition shadow-2xs">
+                    Enroll Candidate
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- Enrolled Courses -->
-    <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-xs">
-        <h3 class="text-sm font-bold text-gray-900 mb-4">Active Course Enrollments ({{ $student->enrollments->count() }})</h3>
-        <div class="divide-y divide-gray-100">
-            @forelse($student->enrollments as $enr)
-                <div class="py-3.5 flex items-center justify-between text-xs">
-                    <div>
-                        <h4 class="font-bold text-gray-800">{{ $enr->course->title }}</h4>
-                        <span class="text-[10px] text-gray-400">Enrolled: {{ $enr->enrolled_at ? $enr->enrolled_at->format('d M, Y') : '-' }} • Expires: {{ $enr->expires_at ? $enr->expires_at->format('d M, Y') : 'Ongoing' }}</span>
-                    </div>
-                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-50 text-emerald-800">
-                        {{ $enr->status }}
-                    </span>
-                </div>
-            @empty
-                <p class="py-4 text-xs text-gray-400 italic">No courses currently enrolled.</p>
-            @endforelse
+    <!-- Enrolled Courses Table with whitespace-nowrap -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-2xs overflow-hidden">
+        <div class="p-5 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="text-sm font-bold text-gray-900">Active Course Enrollments ({{ $student->enrollments->count() }})</h3>
+        </div>
+
+        <div class="overflow-x-auto w-full">
+            <table class="w-full text-left text-xs text-gray-600">
+                <thead class="bg-gray-50 text-gray-500 uppercase text-[10px] font-bold border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-3.5 whitespace-nowrap">Course Batch Title</th>
+                        <th class="px-6 py-3.5 whitespace-nowrap">Enrollment Date</th>
+                        <th class="px-6 py-3.5 whitespace-nowrap">Access Expiration</th>
+                        <th class="px-6 py-3.5 whitespace-nowrap">Status</th>
+                        <th class="px-6 py-3.5 whitespace-nowrap text-right">LMS Link</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($student->enrollments as $enr)
+                        <tr class="hover:bg-gray-50/70 transition">
+                            <td class="px-6 py-3.5 whitespace-nowrap font-bold text-gray-900">
+                                {{ $enr->course ? $enr->course->title : 'Course' }}
+                            </td>
+                            <td class="px-6 py-3.5 whitespace-nowrap font-medium text-gray-500">
+                                {{ $enr->enrolled_at ? $enr->enrolled_at->format('d M, Y') : '-' }}
+                            </td>
+                            <td class="px-6 py-3.5 whitespace-nowrap font-medium text-gray-500">
+                                {{ $enr->expires_at ? $enr->expires_at->format('d M, Y') : 'Ongoing (6 Mos)' }}
+                            </td>
+                            <td class="px-6 py-3.5 whitespace-nowrap">
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                    {{ $enr->status }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-3.5 whitespace-nowrap text-right">
+                                @if($enr->course)
+                                    <a href="{{ route('courses.show', $enr->course->slug) }}" target="_blank" class="text-blue-700 font-bold hover:underline">
+                                        View Batch ↗
+                                    </a>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="py-6 text-center text-xs text-gray-400 italic">No courses currently enrolled.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
 
-    <!-- Past Mock Attempts -->
-    <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-xs">
-        <h3 class="text-sm font-bold text-gray-900 mb-4">Mock Test Attempts ({{ $student->testAttempts->count() }})</h3>
-        <div class="divide-y divide-gray-100">
-            @forelse($student->testAttempts as $att)
-                <div class="py-3.5 flex items-center justify-between text-xs">
-                    <div>
-                        <h4 class="font-bold text-gray-800">{{ $att->mockTest->title }}</h4>
-                        <span class="text-[10px] text-gray-400">Score: <strong class="text-emerald-700">{{ $att->score }}/{{ number_format($att->mockTest->total_marks, 0) }}</strong> • Accuracy: {{ $att->accuracy_percentage }}% • {{ $att->submitted_at ? $att->submitted_at->format('d M, Y') : '' }}</span>
-                    </div>
-                    <a href="{{ route('student.tests.result', $att->id) }}" target="_blank" class="text-xs font-bold text-blue-700 hover:underline">
-                        View Sheet ↗
-                    </a>
-                </div>
-            @empty
-                <p class="py-4 text-xs text-gray-400 italic">No mock tests attempted yet.</p>
-            @endforelse
+    <!-- CBT Mock Attempts Table with whitespace-nowrap -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-2xs overflow-hidden">
+        <div class="p-5 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="text-sm font-bold text-gray-900">CBT Mock Test Attempts ({{ $student->testAttempts->count() }})</h3>
+        </div>
+
+        <div class="overflow-x-auto w-full">
+            <table class="w-full text-left text-xs text-gray-600">
+                <thead class="bg-gray-50 text-gray-500 uppercase text-[10px] font-bold border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-3.5 whitespace-nowrap">Mock Examination</th>
+                        <th class="px-6 py-3.5 whitespace-nowrap">Marks Scored</th>
+                        <th class="px-6 py-3.5 whitespace-nowrap">Accuracy Rate</th>
+                        <th class="px-6 py-3.5 whitespace-nowrap">Qualification</th>
+                        <th class="px-6 py-3.5 whitespace-nowrap">Submission Date</th>
+                        <th class="px-6 py-3.5 whitespace-nowrap text-right">Scorecard</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($student->testAttempts as $att)
+                        <tr class="hover:bg-gray-50/70 transition">
+                            <td class="px-6 py-3.5 whitespace-nowrap font-bold text-gray-900">
+                                {{ $att->mockTest ? $att->mockTest->title : 'CBT Test' }}
+                            </td>
+                            <td class="px-6 py-3.5 whitespace-nowrap font-mono font-bold text-emerald-700">
+                                {{ $att->score }} <span class="text-gray-400 font-normal text-xs">/ {{ $att->mockTest ? $att->mockTest->total_marks : 0 }}</span>
+                            </td>
+                            <td class="px-6 py-3.5 whitespace-nowrap font-mono font-bold text-gray-800">
+                                {{ $att->accuracy_percentage }}%
+                            </td>
+                            <td class="px-6 py-3.5 whitespace-nowrap">
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase {{ $att->is_passed ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200' }}">
+                                    {{ $att->is_passed ? 'QUALIFIED' : 'NOT QUALIFIED' }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-3.5 whitespace-nowrap font-medium text-gray-400">
+                                {{ $att->submitted_at ? $att->submitted_at->format('d M, Y h:i A') : 'In Progress' }}
+                            </td>
+                            <td class="px-6 py-3.5 whitespace-nowrap text-right">
+                                <a href="{{ route('student.tests.result', $att->id) }}" target="_blank" class="px-2.5 py-1 rounded-lg text-xs font-bold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 transition inline-block">
+                                    Sheet ↗
+                                </a>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="py-6 text-center text-xs text-gray-400 italic">No mock tests attempted yet.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
 

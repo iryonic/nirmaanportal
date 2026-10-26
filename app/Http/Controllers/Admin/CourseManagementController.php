@@ -158,4 +158,136 @@ class CourseManagementController extends Controller
         $lesson->delete();
         return back()->with('success', 'Lesson deleted.');
     }
+
+    public function importPlaylist(Request $request, Course $course, \App\Services\YouTubePlaylistService $service)
+    {
+        $request->validate([
+            'playlist_url' => ['required', 'string'],
+        ]);
+
+        $playlistId = \App\Services\YouTubePlaylistService::extractPlaylistId($request->playlist_url);
+        
+        if (!$playlistId) {
+            // Check if user entered a single video URL or video ID instead
+            $singleVideoId = \App\Services\YouTubePlaylistService::extractVideoId($request->playlist_url);
+            if ($singleVideoId) {
+                $videoInfo = $service->fetchSingleVideo($singleVideoId);
+                $module = $course->modules()->first();
+                if (!$module) {
+                    $module = $course->modules()->create([
+                        'title' => $course->title . ' — Video Lectures',
+                        'sort_order' => 1,
+                    ]);
+                }
+                $maxSort = (int)($module->lessons()->max('sort_order') ?? 0);
+                $module->lessons()->create([
+                    'title' => $videoInfo['title'] ?: ($course->title . ' — Lecture ' . ($maxSort + 1)),
+                    'video_id' => $singleVideoId,
+                    'video_provider' => 'youtube',
+                    'duration_minutes' => 30,
+                    'sort_order' => $maxSort + 1,
+                    'is_preview' => ($maxSort === 0),
+                ]);
+
+                return back()->with('success', "Detected single YouTube video. Successfully added lesson: " . ($videoInfo['title'] ?: $singleVideoId));
+            }
+
+            return back()->with('error', 'Invalid YouTube link. Please enter a valid playlist link (e.g. https://www.youtube.com/playlist?list=...) or YouTube video URL.');
+        }
+
+        $result = $service->fetchPlaylist($playlistId);
+        if (!$result['success'] || empty($result['videos'])) {
+            return back()->with('error', $result['message'] ?? 'Could not fetch videos from this playlist. Please ensure the playlist is public or unlisted.');
+        }
+
+        // Store playlist url on course
+        $course->update(['youtube_playlist_url' => $request->playlist_url]);
+
+        // Find or create a module for this course
+        $module = $course->modules()->first();
+        if (!$module) {
+            $module = $course->modules()->create([
+                'title' => $result['title'] ?: ($course->title . ' — All Lectures'),
+                'description' => 'Complete video lecture curriculum imported directly from YouTube playlist.',
+                'sort_order' => 1,
+            ]);
+        }
+
+        $startSort = (int)($module->lessons()->max('sort_order') ?? 0);
+        $importedCount = 0;
+
+        foreach ($result['videos'] as $index => $v) {
+            $existing = Lesson::whereHas('module', function($q) use ($course) {
+                $q->where('course_id', $course->id);
+            })->where('video_id', $v['video_id'])->first();
+
+            if ($existing) {
+                $existing->update([
+                    'title' => $v['title'],
+                    'duration_minutes' => $v['duration_minutes'],
+                    'duration_text' => $v['duration_text'],
+                ]);
+            } else {
+                $module->lessons()->create([
+                    'title' => $v['title'],
+                    'duration_minutes' => $v['duration_minutes'],
+                    'duration_text' => $v['duration_text'],
+                    'video_provider' => 'youtube',
+                    'video_id' => $v['video_id'],
+                    'is_preview' => ($index === 0 && $startSort === 0), // First lesson preview
+                    'sort_order' => $startSort + $index + 1,
+                ]);
+                $importedCount++;
+            }
+        }
+
+        return back()->with('success', "Successfully imported " . count($result['videos']) . " episodes from YouTube playlist: " . $result['title']);
+    }
+
+    public function saveEpisodes(Request $request, Course $course)
+    {
+        $validated = $request->validate([
+            'episodes' => ['required', 'array'],
+            'episodes.*.title' => ['required', 'string', 'max:255'],
+            'episodes.*.video_input' => ['required', 'string'],
+        ]);
+
+        $module = $course->modules()->first();
+        if (!$module) {
+            $module = $course->modules()->create([
+                'title' => $course->title . ' — Video Lectures',
+                'sort_order' => 1,
+            ]);
+        }
+
+        $addedCount = 0;
+        $maxSort = (int)($module->lessons()->max('sort_order') ?? 0);
+
+        foreach ($validated['episodes'] as $epData) {
+            $videoId = \App\Services\YouTubePlaylistService::extractVideoId($epData['video_input']);
+            if (!$videoId) continue;
+
+            $maxSort++;
+            $module->lessons()->create([
+                'title' => $epData['title'],
+                'video_id' => $videoId,
+                'video_provider' => 'youtube',
+                'duration_minutes' => 30,
+                'sort_order' => $maxSort,
+                'is_preview' => false,
+            ]);
+            $addedCount++;
+        }
+
+        return back()->with('success', "Successfully saved {$addedCount} episodes under this course!");
+    }
+
+    public function toggleStatus(Course $course)
+    {
+        $course->is_published = !$course->is_published;
+        $course->save();
+
+        $label = $course->is_published ? 'published' : 'moved to draft';
+        return back()->with('success', "Course batch '{$course->title}' has been {$label}.");
+    }
 }

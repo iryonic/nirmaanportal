@@ -62,10 +62,10 @@
                         <div class="absolute -bottom-8 -left-8 w-72 h-72 bg-emerald-100 rounded-full mix-blend-multiply filter blur-2xl opacity-40"></div>
                         
                         <!-- Main Cadets Parade Image with shaped container -->
-                        <div class="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white/80 aspect-[4/3] bg-gray-100 transform rotate-1 hover:rotate-0 transition duration-500">
+                        <div class="relative rounded-2xl overflow-hidden border border-gray-200 aspect-[4/3] bg-gray-100 shadow-2xs">
                             <img src="{{ asset('images/cadets_parade.jpg') }}" alt="Indian Armed Forces Cadets Passing Out Parade" class="w-full h-full object-cover">
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
-                            <div class="absolute bottom-4 left-4 right-4 text-white text-xs font-medium backdrop-blur-xs bg-black/20 p-2.5 rounded-xl border border-white/20">
+                            <div class="absolute inset-0 bg-black/20"></div>
+                            <div class="absolute bottom-4 left-4 right-4 text-white text-xs font-medium bg-black/60 p-2.5 rounded-xl border border-white/20">
                                 🇮🇳 Preparing officers &amp; soldiers with national pride and excellence
                             </div>
                         </div>
@@ -301,9 +301,7 @@
                 <!-- Left: Student Image -->
                 <div class="lg:col-span-5 flex justify-center">
                     <div class="relative w-full max-w-sm">
-                        <!-- Subtle blob backdrop -->
-                        <div class="absolute inset-0 bg-gradient-to-tr from-emerald-100 to-sky-100 rounded-full transform -rotate-3 filter blur-xl opacity-60"></div>
-                        <div class="relative rounded-3xl overflow-hidden shadow-xl border-4 border-white bg-white">
+                        <div class="relative rounded-2xl overflow-hidden border border-gray-200 shadow-2xs bg-white">
                             <img src="{{ asset('images/student_aspirant.jpg') }}" alt="Nirmaan Defence Aspirant Student" class="w-full h-auto object-cover">
                         </div>
                     </div>
@@ -445,22 +443,20 @@
 
     <!-- 7. FREQUENTLY ASKED QUESTIONS SECTION (Exact match to screenshot) -->
     <section class="py-16" x-data="{ activeFaq: null }">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-end justify-between mb-8">
                 <div>
                     <span class="text-xs font-bold uppercase tracking-wider text-blue-600 block mb-1">FAQ</span>
                     <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900">Frequently Asked Questions</h2>
                 </div>
-                <a href="{{ route('about') }}#faqs" class="text-xs font-semibold text-blue-700 hover:text-blue-900">
-                    View All FAQs →
-                </a>
+              
             </div>
 
             <!-- Accordion items -->
             <div class="space-y-3">
                 @foreach($faqs as $index => $faq)
                     <div class="border border-gray-200 rounded-xl bg-white overflow-hidden transition shadow-2xs">
-                        <button @click="activeFaq = (activeFaq === {{ $index }} ? null : {{ $index }})" class="w-full px-5 py-4 text-left flex items-center justify-between text-sm font-semibold text-gray-900 hover:text-blue-700 focus:outline-none">
+                        <button @click="activeFaq = (activeFaq === {{ $index }} ? null : {{ $index }})" class="w-full px-5 py-8 text-left flex items-center justify-between text-sm font-semibold text-gray-900 hover:text-blue-700 focus:outline-none">
                             <span>{{ $faq->question }}</span>
                             <span class="ml-4 flex-shrink-0 text-gray-400">
                                 <svg x-show="activeFaq !== {{ $index }}" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -479,21 +475,18 @@
     <!-- 8. BOTTOM CALL TO ACTION BANNER (Exact match to screenshot) -->
     <section class="py-10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-50 via-teal-50 to-sky-50 border border-emerald-100 p-8 sm:p-12 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
-                <!-- Soft background pattern -->
-                <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-emerald-200/30 rounded-full blur-2xl pointer-events-none"></div>
-
+            <div class="relative overflow-hidden rounded-2xl bg-slate-900 border border-slate-800 p-8 sm:p-12 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xs">
                 <div class="relative z-10 space-y-2 text-center md:text-left">
-                    <h3 class="text-2xl sm:text-3xl font-extrabold text-gray-900">
+                    <h3 class="text-2xl sm:text-3xl font-extrabold text-white">
                         Ready to Build Your Future?
                     </h3>
-                    <p class="text-sm text-gray-600 max-w-xl">
+                    <p class="text-sm text-slate-300 max-w-xl">
                         Join Nirmaan today and take the first step towards your dream career in the security forces.
                     </p>
                 </div>
 
                 <div class="relative z-10 flex-shrink-0">
-                    <a href="{{ route('courses.index') }}" class="inline-flex items-center px-8 py-3.5 rounded-full text-sm font-bold text-white bg-[#1D4ED8] hover:bg-[#1E40AF] shadow-md shadow-blue-500/20 hover:shadow-lg transition-all transform hover:-translate-y-0.5">
+                    <a href="{{ route('courses.index') }}" class="inline-flex items-center px-8 py-3.5 rounded-xl text-sm font-bold text-white bg-blue-700 hover:bg-blue-800 transition">
                         <span>Explore Courses</span>
                         <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>

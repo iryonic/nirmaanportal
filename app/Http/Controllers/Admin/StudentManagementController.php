@@ -14,6 +14,18 @@ class StudentManagementController extends Controller
     {
         $query = User::where('role', 'student')->withCount(['enrollments', 'testAttempts']);
 
+        if ($request->filled('status')) {
+            if ($request->status === 'active') {
+                $query->where('is_active', true);
+            } elseif ($request->status === 'suspended') {
+                $query->where('is_active', false);
+            }
+        }
+
+        if ($request->filled('exam')) {
+            $query->where('target_exam', $request->exam);
+        }
+
         if ($request->filled('search')) {
             $s = $request->search;
             $query->where(function ($q) use ($s) {
@@ -25,8 +37,10 @@ class StudentManagementController extends Controller
         }
 
         $students = $query->latest()->paginate(15)->withQueryString();
+        $totalActive = User::where('role', 'student')->where('is_active', true)->count();
+        $totalSuspended = User::where('role', 'student')->where('is_active', false)->count();
 
-        return view('admin.students.index', compact('students'));
+        return view('admin.students.index', compact('students', 'totalActive', 'totalSuspended'));
     }
 
     public function show(User $student)

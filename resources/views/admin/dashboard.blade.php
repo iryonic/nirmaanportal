@@ -1,219 +1,248 @@
 @extends('layouts.admin')
 
-@section('title', 'Officer Command Dashboard — Nirmaan')
-@section('header_title', 'Operational Command & National Metrics')
+@section('title', 'Officer Command Dashboard — Nirmaan Defence Platform')
+@section('header_title', 'HQ Command Center')
 
 @section('content')
 <div class="space-y-8">
     
     <!-- Hero Banner with Live Operational Status -->
-    <div class="bg-gradient-to-r from-[#0B132B] via-slate-900 to-blue-950 text-white rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-xl border border-slate-800">
-        <!-- Decorative Glow -->
-        <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
-        
+    <div class="bg-slate-900 text-white rounded-2xl p-6 sm:p-8 relative overflow-hidden border border-slate-800 shadow-2xs">
         <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div class="space-y-2">
-                <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-bold tracking-wide">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                    <span>NATIONAL DEFENCE PLATFORM CONTROL</span>
+                <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-md bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-bold tracking-wide">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>NATIONAL DEFENCE ACADEMY COMMAND HQ</span>
                 </div>
-                <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">
                     Welcome, Officer {{ Auth::user()->name }}
                 </h1>
                 <p class="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-                    Real-time oversight over defence aspirants, course curricula, question bank repository, and Computer-Based Test (CBT) engine.
+                    Real-time administrative command over defence aspirants, course curricula, question bank repository, financial audits, and Computer-Based Test (CBT) engine.
                 </p>
             </div>
 
-            <div class="flex items-center space-x-3 flex-shrink-0">
+            <!-- Quick Action Buttons -->
+            <div class="flex flex-wrap items-center gap-2.5 shrink-0 self-start sm:self-auto">
                 <a href="{{ route('admin.courses.create') }}" 
-                   class="px-5 py-2.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30 transition transform hover:-translate-y-0.5 flex items-center space-x-2">
+                   class="px-4 py-2.5 rounded-xl text-xs font-bold bg-blue-700 hover:bg-blue-800 text-white transition flex items-center space-x-2 shadow-xs">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     <span>+ New Course</span>
                 </a>
                 <a href="{{ route('admin.tests.create') }}" 
-                   class="px-5 py-2.5 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-xs transition flex items-center space-x-2">
+                   class="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition flex items-center space-x-2 shadow-xs">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
                     <span>+ Launch CBT</span>
+                </a>
+                <a href="{{ route('admin.questions.create') }}" 
+                   class="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition flex items-center space-x-2 shadow-xs">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>+ New MCQ</span>
                 </a>
             </div>
         </div>
     </div>
 
-    <!-- KPI Metrics Grid -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+    <!-- KPI Metrics Grid (6 Columns) -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
         
         <!-- Total Cadets -->
-        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-xs hover:shadow-md transition-shadow">
+        <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-2xs hover:border-gray-300 transition">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs text-gray-500 font-semibold">Enrolled Cadets</span>
-                <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                 </div>
             </div>
-            <span class="text-2xl font-black text-gray-900 block">{{ number_format($totalStudents) }}</span>
-            <span class="text-[10px] text-emerald-600 font-bold flex items-center mt-1">
+            <span class="text-2xl font-bold text-gray-900 block font-mono">{{ number_format($totalStudents) }}</span>
+            <span class="text-[10px] text-emerald-700 font-medium flex items-center mt-1">
                 <span class="mr-1">●</span> Verified Aspirants
             </span>
         </div>
 
         <!-- Active Subscriptions -->
-        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-xs hover:shadow-md transition-shadow">
+        <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-2xs hover:border-gray-300 transition">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs text-gray-500 font-semibold">Active Seats</span>
-                <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
             </div>
-            <span class="text-2xl font-black text-indigo-700 block">{{ number_format($totalEnrollments) }}</span>
-            <span class="text-[10px] text-indigo-600 font-bold flex items-center mt-1">
-                <span class="mr-1">●</span> In-Training Seats
+            <span class="text-2xl font-bold text-indigo-700 block font-mono">{{ number_format($totalEnrollments) }}</span>
+            <span class="text-[10px] text-indigo-700 font-medium flex items-center mt-1">
+                <span class="mr-1">●</span> Active Trainees
             </span>
         </div>
 
         <!-- Courses -->
-        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-xs hover:shadow-md transition-shadow">
+        <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-2xs hover:border-gray-300 transition">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs text-gray-500 font-semibold">Course Batches</span>
-                <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
                 </div>
             </div>
-            <span class="text-2xl font-black text-gray-900 block">{{ $totalCourses }}</span>
-            <span class="text-[10px] text-amber-700 font-bold flex items-center mt-1">
+            <span class="text-2xl font-bold text-gray-900 block font-mono">{{ $totalCourses }}</span>
+            <span class="text-[10px] text-amber-700 font-medium flex items-center mt-1">
                 <span class="mr-1">●</span> Published Batches
             </span>
         </div>
 
         <!-- Question Bank -->
-        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-xs hover:shadow-md transition-shadow">
+        <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-2xs hover:border-gray-300 transition">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs text-gray-500 font-semibold">Question Bank</span>
-                <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
             </div>
-            <span class="text-2xl font-black text-gray-900 block">{{ number_format($totalQuestions) }}</span>
-            <span class="text-[10px] text-emerald-700 font-bold flex items-center mt-1">
-                <span class="mr-1">●</span> Verified Items
+            <span class="text-2xl font-bold text-gray-900 block font-mono">{{ number_format($totalQuestions) }}</span>
+            <span class="text-[10px] text-emerald-700 font-medium flex items-center mt-1">
+                <span class="mr-1">●</span> Verified MCQs
             </span>
         </div>
 
         <!-- CBT Mock Tests -->
-        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-xs hover:shadow-md transition-shadow">
+        <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-2xs hover:border-gray-300 transition">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs text-gray-500 font-semibold">CBT Mock Tests</span>
-                <div class="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
+                <div class="w-8 h-8 rounded-lg bg-sky-50 text-sky-700 flex items-center justify-center">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
             </div>
-            <span class="text-2xl font-black text-gray-900 block">{{ $totalMockTests }}</span>
-            <span class="text-[10px] text-sky-700 font-bold flex items-center mt-1">
-                <span class="mr-1">●</span> Live Timed CBTs
+            <span class="text-2xl font-bold text-gray-900 block font-mono">{{ $totalMockTests }}</span>
+            <span class="text-[10px] text-sky-700 font-medium flex items-center mt-1">
+                <span class="mr-1">●</span> Online Exam Engines
             </span>
         </div>
 
         <!-- Verified Revenue -->
-        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-xs hover:shadow-md transition-shadow">
+        <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-2xs hover:border-gray-300 transition">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs text-gray-500 font-semibold">Gross Revenue</span>
-                <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
             </div>
-            <span class="text-xl sm:text-2xl font-black text-emerald-600 block">₹ {{ number_format($totalRevenue, 0) }}</span>
-            <span class="text-[10px] text-emerald-700 font-bold flex items-center mt-1">
-                <span class="mr-1">●</span> Verified INR
+            <span class="text-xl sm:text-2xl font-bold text-emerald-700 block font-mono">₹ {{ number_format($totalRevenue, 2) }}</span>
+            <span class="text-[10px] text-emerald-700 font-medium flex items-center mt-1">
+                <span class="mr-1">●</span> Verified Receipts
             </span>
         </div>
 
     </div>
 
-    <!-- Quick Navigation Sub-Bar -->
-    <div class="bg-white rounded-2xl p-3 border border-gray-100 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs font-semibold">
-        <span class="text-gray-400 text-[11px] uppercase tracking-wider font-extrabold pl-2">Quick Navigation Hub:</span>
+    <!-- Quick Navigation Hub -->
+    <div class="bg-white rounded-2xl p-3 sm:p-4 border border-gray-200 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs font-semibold">
+        <span class="text-gray-400 text-[11px] uppercase tracking-wider font-bold pl-2">HQ Quick Links:</span>
         <div class="flex flex-wrap items-center gap-2">
-            <a href="{{ route('admin.courses.index') }}" class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-blue-50 hover:text-blue-700 transition flex items-center space-x-1.5">
-                <span>Courses &amp; Syllabus</span>
+            <a href="{{ route('admin.courses.index') }}" class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-blue-50 hover:text-blue-700 border border-gray-200 transition">
+                Courses Directory
             </a>
-            <a href="{{ route('admin.questions.index') }}" class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-blue-50 hover:text-blue-700 transition flex items-center space-x-1.5">
-                <span>Question Bank</span>
+            <a href="{{ route('admin.questions.index') }}" class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-blue-50 hover:text-blue-700 border border-gray-200 transition">
+                Question Bank
             </a>
-            <a href="{{ route('admin.tests.index') }}" class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-blue-50 hover:text-blue-700 transition flex items-center space-x-1.5">
-                <span>Mock Tests</span>
+            <a href="{{ route('admin.tests.index') }}" class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-blue-50 hover:text-blue-700 border border-gray-200 transition">
+                Mock Tests Hub
             </a>
-            <a href="{{ route('admin.students.index') }}" class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-blue-50 hover:text-blue-700 transition flex items-center space-x-1.5">
-                <span>Registered Cadets</span>
+            <a href="{{ route('admin.students.index') }}" class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-blue-50 hover:text-blue-700 border border-gray-200 transition">
+                Cadets Roster
             </a>
-            <a href="{{ route('admin.orders.index') }}" class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-blue-50 hover:text-blue-700 transition flex items-center space-x-1.5">
-                <span>Orders &amp; Receipts</span>
+            <a href="{{ route('admin.orders.index') }}" class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-blue-50 hover:text-blue-700 border border-gray-200 transition">
+                Orders &amp; Financial Audits
             </a>
-            <a href="{{ route('admin.content.index') }}" class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-blue-50 hover:text-blue-700 transition flex items-center space-x-1.5">
-                <span>Content &amp; Inquiries</span>
+            <a href="{{ route('admin.content.index') }}" class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-blue-50 hover:text-blue-700 border border-gray-200 transition">
+                Inquiries &amp; Settings
             </a>
         </div>
     </div>
 
-    <!-- Middle Row: Orders Audit & Recent Cadets -->
+    <!-- Middle Row: Orders Audit Table (with whitespace-nowrap) & Recent Cadets -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         <!-- Recent Orders (8 cols) -->
-        <div class="lg:col-span-8 bg-white rounded-3xl p-6 border border-gray-100 shadow-xs space-y-4">
-            <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+        <div class="lg:col-span-8 bg-white rounded-2xl border border-gray-200 shadow-2xs overflow-hidden">
+            <div class="p-5 sm:p-6 border-b border-gray-100 flex items-center justify-between">
                 <div>
                     <h3 class="text-sm font-bold text-gray-900">Recent Gateway Transactions</h3>
-                    <p class="text-[11px] text-gray-500">Live order captures from student enrollments</p>
                 </div>
                 <a href="{{ route('admin.orders.index') }}" class="text-xs font-bold text-blue-700 hover:text-blue-800 transition flex items-center space-x-1">
-                    <span>Audit All Orders</span>
-                    <span>&rarr;</span>
+                    <span> View All</span>
+                   
                 </a>
             </div>
 
-            <div class="overflow-x-auto">
+            <!-- Table with Strict whitespace-nowrap -->
+            <div class="overflow-x-auto w-full">
                 <table class="w-full text-left text-xs text-gray-600">
-                    <thead class="bg-gray-50/70 text-gray-400 uppercase text-[10px] font-bold border-b border-gray-100">
+                    <thead class="bg-gray-50 text-gray-500 uppercase text-[10px] font-bold border-b border-gray-200">
                         <tr>
-                            <th class="px-4 py-3">Order #</th>
-                            <th class="px-4 py-3">Cadet Name</th>
-                            <th class="px-4 py-3">Course / Batch</th>
-                            <th class="px-4 py-3">Amount</th>
-                            <th class="px-4 py-3">Status</th>
-                            <th class="px-4 py-3 text-right">Invoice</th>
+                            <th class="px-5 py-3.5 whitespace-nowrap">Order ID</th>
+                            <th class="px-5 py-3.5 whitespace-nowrap">Cadet Name</th>
+                            <th class="px-5 py-3.5 whitespace-nowrap">Purchased Item</th>
+                            <th class="px-5 py-3.5 whitespace-nowrap">Gateway Method</th>
+                            <th class="px-5 py-3.5 whitespace-nowrap">Amount</th>
+                            <th class="px-5 py-3.5 whitespace-nowrap">Status</th>
+                            <th class="px-5 py-3.5 whitespace-nowrap text-right">Action</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @forelse($recentOrders as $ord)
-                            <tr class="hover:bg-gray-50/50 transition">
-                                <td class="px-4 py-3.5 font-mono font-bold text-gray-900">{{ $ord->order_number }}</td>
-                                <td class="px-4 py-3.5 font-semibold text-gray-900">
-                                    <div class="flex items-center space-x-2">
-                                        <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-800 font-bold text-[10px] flex items-center justify-center flex-shrink-0">
+                            <tr class="hover:bg-gray-50/70 transition">
+                                <td class="px-5 py-3.5 whitespace-nowrap font-mono font-bold text-gray-900">
+                                    <a href="{{ route('admin.orders.show', $ord->id) }}" class="hover:text-blue-700 transition">
+                                        {{ $ord->order_number }}
+                                    </a>
+                                    <span class="text-[10px] text-gray-400 block font-normal">{{ $ord->created_at->format('M d, Y h:i A') }}</span>
+                                </td>
+                                <td class="px-5 py-3.5 whitespace-nowrap">
+                                    <div class="flex items-center space-x-2.5">
+                                        <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-800 font-bold text-xs flex items-center justify-center shrink-0 border border-blue-100">
                                             {{ strtoupper(substr($ord->user ? $ord->user->name : 'N', 0, 1)) }}
                                         </div>
-                                        <span class="truncate max-w-[130px]">{{ $ord->user ? $ord->user->name : 'N/A' }}</span>
+                                        <div>
+                                            <span class="font-bold text-gray-900 block">{{ $ord->user ? $ord->user->name : 'N/A' }}</span>
+                                            <span class="text-[10px] text-gray-400 block">{{ $ord->user ? $ord->user->email : '' }}</span>
+                                        </div>
                                     </div>
                                 </td>
-                                <td class="px-4 py-3.5 text-gray-700">
-                                    <span class="truncate max-w-[180px] block" title="{{ $ord->course ? $ord->course->title : 'N/A' }}">
-                                        {{ $ord->course ? $ord->course->title : 'N/A' }}
+                                <td class="px-5 py-3.5 whitespace-nowrap text-gray-800">
+                                    @if($ord->course)
+                                        <div class="flex items-center space-x-1.5">
+                                            <span class="px-2 py-0.5 rounded text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-100">COURSE</span>
+                                            <span class="font-medium text-gray-900 max-w-[200px] truncate" title="{{ $ord->course->title }}">{{ $ord->course->title }}</span>
+                                        </div>
+                                    @elseif($ord->mockTest)
+                                        <div class="flex items-center space-x-1.5">
+                                            <span class="px-2 py-0.5 rounded text-[9px] font-bold bg-sky-50 text-sky-700 border border-sky-100">CBT TEST</span>
+                                            <span class="font-medium text-gray-900 max-w-[200px] truncate" title="{{ $ord->mockTest->title }}">{{ $ord->mockTest->title }}</span>
+                                        </div>
+                                    @else
+                                        <span class="text-gray-500 font-medium">Academy Subscription</span>
+                                    @endif
+                                </td>
+                                <td class="px-5 py-3.5 whitespace-nowrap">
+                                    <span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-700 border border-gray-200">
+                                        {{ $ord->payment_gateway }}
                                     </span>
                                 </td>
-                                <td class="px-4 py-3.5 font-black text-gray-900">₹ {{ number_format($ord->amount, 0) }}</td>
-                                <td class="px-4 py-3.5">
-                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase {{ $ord->status === 'paid' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200' }}">
-                                        {{ $ord->status }}
+                                <td class="px-5 py-3.5 whitespace-nowrap font-bold text-gray-900 font-mono">
+                                    ₹ {{ number_format($ord->amount, 2) }}
+                                </td>
+                                <td class="px-5 py-3.5 whitespace-nowrap">
+                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase {{ $ord->status === 'paid' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200' }}">
+                                        ● {{ $ord->status }}
                                     </span>
                                 </td>
-                                <td class="px-4 py-3.5 text-right">
-                                    <a href="{{ route('admin.orders.show', $ord->id) }}" class="text-blue-700 font-bold hover:underline">
-                                        View
+                                <td class="px-5 py-3.5 whitespace-nowrap text-right">
+                                    <a href="{{ route('admin.orders.show', $ord->id) }}" class="px-2.5 py-1 rounded-lg text-xs font-bold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 transition inline-block">
+                                        View Receipt
                                     </a>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="py-8 text-center text-xs text-gray-400 italic">No recent orders found.</td>
+                                <td colspan="7" class="py-8 text-center text-xs text-gray-400 italic">No recent transactions recorded.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -221,36 +250,36 @@
             </div>
         </div>
 
-        <!-- Recent Cadets (4 cols) -->
-        <div class="lg:col-span-4 bg-white rounded-3xl p-6 border border-gray-100 shadow-xs space-y-4">
+        <!-- Recent Registered Cadets (4 cols) -->
+        <div class="lg:col-span-4 bg-white rounded-2xl p-5 sm:p-6 border border-gray-200 shadow-2xs space-y-4">
             <div class="flex items-center justify-between pb-3 border-b border-gray-100">
                 <div>
                     <h3 class="text-sm font-bold text-gray-900">Recent Aspirants</h3>
-                    <p class="text-[11px] text-gray-500">Newly registered students</p>
+                    <p class="text-[11px] text-gray-500">Newly registered candidates</p>
                 </div>
                 <a href="{{ route('admin.students.index') }}" class="text-xs font-bold text-blue-700 hover:text-blue-800 transition">
-                    Directory &rarr;
+                    View 
                 </a>
             </div>
 
             <div class="space-y-3">
                 @forelse($recentStudents as $st)
-                    <div class="p-3 rounded-2xl bg-gray-50/70 border border-gray-100 flex items-center justify-between hover:bg-gray-100/70 transition">
+                    <div class="p-3 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-between hover:bg-gray-100 transition">
                         <div class="flex items-center space-x-3 truncate mr-2">
-                            <div class="w-9 h-9 rounded-xl bg-blue-100 text-blue-800 font-bold text-xs flex items-center justify-center flex-shrink-0 shadow-2xs">
+                            <div class="w-9 h-9 rounded-xl bg-blue-100 text-blue-800 font-bold text-xs flex items-center justify-center shrink-0 border border-blue-200">
                                 {{ strtoupper(substr($st->name, 0, 1)) }}
                             </div>
                             <div class="truncate">
                                 <h4 class="text-xs font-bold text-gray-900 truncate">{{ $st->name }}</h4>
                                 <div class="flex items-center space-x-1.5 mt-0.5">
                                     <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-100 uppercase">
-                                        {{ $st->target_exam ?? 'Cadet' }}
+                                        {{ $st->target_exam ?? 'NDA / CDS' }}
                                     </span>
                                     <span class="text-[10px] text-gray-400">&bull; {{ $st->created_at->diffForHumans() }}</span>
                                 </div>
                             </div>
                         </div>
-                        <a href="{{ route('admin.students.show', $st->id) }}" class="text-xs font-bold text-blue-700 hover:text-blue-900 px-2 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 transition flex-shrink-0">
+                        <a href="{{ route('admin.students.show', $st->id) }}" class="text-xs font-bold text-blue-700 hover:text-blue-900 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 transition shrink-0">
                             Profile
                         </a>
                     </div>
@@ -262,45 +291,69 @@
 
     </div>
 
-    <!-- CBT Attempts Stream -->
-    <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-xs space-y-4">
-        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+    <!-- CBT Attempts Stream Table with whitespace-nowrap -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-2xs overflow-hidden">
+        <div class="p-5 sm:p-6 border-b border-gray-100 flex items-center justify-between">
             <div>
-                <h3 class="text-sm font-bold text-gray-900">Recent CBT Mock Test Submissions</h3>
-                <p class="text-[11px] text-gray-500">Live test scorecards and performance metrics scored automatically by the engine</p>
+                <h3 class="text-sm font-bold text-gray-900">Recent Test Submissions</h3>
             </div>
             <a href="{{ route('admin.tests.index') }}" class="text-xs font-bold text-blue-700 hover:underline">
-                Mock Tests Hub &rarr;
+                Mock Tests 
             </a>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            @forelse($recentAttempts as $att)
-                <div class="p-4 rounded-2xl bg-gray-50/70 border border-gray-100 flex flex-col justify-between space-y-3">
-                    <div class="flex items-start justify-between">
-                        <div>
-                            <span class="text-[10px] text-gray-400 uppercase font-bold tracking-wider block">Candidate</span>
-                            <span class="text-xs font-bold text-gray-900 block truncate max-w-[180px]">{{ $att->user ? $att->user->name : 'N/A' }}</span>
-                            <span class="text-[11px] text-blue-700 font-semibold truncate block mt-0.5">{{ $att->mockTest ? $att->mockTest->title : 'N/A' }}</span>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-base font-black text-gray-900 block">{{ $att->score }}</span>
-                            <span class="text-[9px] text-gray-400 uppercase font-bold block">Marks Scored</span>
-                        </div>
-                    </div>
-
-                    <div class="pt-2 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
-                        <span>Accuracy: <strong class="text-emerald-600">{{ $att->accuracy_percentage }}%</strong></span>
-                        <span>{{ $att->submitted_at ? $att->submitted_at->diffForHumans() : 'Just now' }}</span>
-                    </div>
-                </div>
-            @empty
-                <div class="col-span-3 py-6 text-center text-xs text-gray-400 italic">
-                    No completed CBT test attempts recorded yet.
-                </div>
-            @endforelse
+        <div class="overflow-x-auto w-full">
+            <table class="w-full text-left text-xs text-gray-600">
+                <thead class="bg-gray-50 text-gray-500 uppercase text-[10px] font-bold border-b border-gray-200">
+                    <tr>
+                        <th class="px-5 py-3.5 whitespace-nowrap">Candidate</th>
+                        <th class="px-5 py-3.5 whitespace-nowrap">Mock Examination</th>
+                        <th class="px-5 py-3.5 whitespace-nowrap">Score Obtained</th>
+                        <th class="px-5 py-3.5 whitespace-nowrap">Accuracy Rate</th>
+                        <th class="px-5 py-3.5 whitespace-nowrap">Result Qualification</th>
+                        <th class="px-5 py-3.5 whitespace-nowrap text-right">Submitted At</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($recentAttempts as $att)
+                        <tr class="hover:bg-gray-50/70 transition">
+                            <td class="px-5 py-3.5 whitespace-nowrap font-bold text-gray-900">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-6 h-6 rounded-full bg-blue-50 text-blue-700 font-bold text-[10px] flex items-center justify-center shrink-0 border border-blue-100">
+                                        {{ strtoupper(substr($att->user ? $att->user->name : 'C', 0, 1)) }}
+                                    </div>
+                                    <span>{{ $att->user ? $att->user->name : 'N/A' }}</span>
+                                </div>
+                            </td>
+                            <td class="px-5 py-3.5 whitespace-nowrap text-gray-800 font-medium">
+                                {{ $att->mockTest ? $att->mockTest->title : 'N/A' }}
+                            </td>
+                            <td class="px-5 py-3.5 whitespace-nowrap font-mono font-bold text-gray-900">
+                                {{ $att->score }} <span class="text-gray-400 font-normal text-[11px]">/ {{ $att->mockTest ? $att->mockTest->total_marks : 0 }}</span>
+                            </td>
+                            <td class="px-5 py-3.5 whitespace-nowrap">
+                                <span class="font-bold text-emerald-700 font-mono">{{ $att->accuracy_percentage }}%</span>
+                            </td>
+                            <td class="px-5 py-3.5 whitespace-nowrap">
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase {{ $att->is_passed ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200' }}">
+                                    {{ $att->is_passed ? '● QUALIFIED' : '● NOT QUALIFIED' }}
+                                </span>
+                            </td>
+                            <td class="px-5 py-3.5 whitespace-nowrap text-right text-gray-400 font-medium text-[11px]">
+                                {{ $att->submitted_at ? $att->submitted_at->format('d M, Y h:i A') : 'N/A' }}
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="py-8 text-center text-xs text-gray-400 italic">No completed CBT test attempts recorded yet.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
+
+ 
 
 </div>
 @endsection

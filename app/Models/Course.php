@@ -19,6 +19,7 @@ class Course extends Model
         'subtitle',
         'description',
         'thumbnail',
+        'youtube_playlist_url',
         'price',
         'original_price',
         'is_free',

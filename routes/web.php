@@ -32,19 +32,24 @@ Route::get('/search', [HomeController::class, 'search'])->name('search');
 
 Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
 Route::get('/courses/{slug}', [CourseController::class, 'show'])->name('courses.show');
+Route::get('/courses/{slug}/watch', [CourseController::class, 'watch'])->name('courses.watch');
 
 Route::get('/resources', [ResourceController::class, 'index'])->name('resources.index');
 Route::get('/resources/download/{material}', [ResourceController::class, 'download'])->name('resources.download');
 
 /*
 |--------------------------------------------------------------------------
-| Authentication Routes
+| Authentication & Recovery Routes
 |--------------------------------------------------------------------------
 */
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
 Route::post('/register', [AuthController::class, 'register'])->name('register.submit');
+Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
+Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');
+Route::get('/reset-password/{token}', [AuthController::class, 'showResetPassword'])->name('password.reset');
+Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 /*
@@ -67,6 +72,7 @@ Route::prefix('student')->name('student.')->middleware('auth')->group(function (
 
     // Mock Tests
     Route::get('/tests', [MockTestController::class, 'index'])->name('tests.index');
+    Route::get('/tests-all', [MockTestController::class, 'index'])->name('tests');
     Route::get('/tests/{test}/instructions', [MockTestController::class, 'instructions'])->name('tests.instructions');
     Route::post('/tests/{test}/start', [MockTestController::class, 'start'])->name('tests.start');
     Route::get('/tests/attempt/{attempt}', [MockTestController::class, 'attempt'])->name('tests.attempt');
@@ -75,9 +81,13 @@ Route::prefix('student')->name('student.')->middleware('auth')->group(function (
     Route::get('/tests/result/{attempt}', [MockTestController::class, 'result'])->name('tests.result');
 
     // Orders & Checkout
+    Route::post('/checkout/validate-coupon', [OrderController::class, 'validateCoupon'])->name('checkout.validate-coupon');
     Route::get('/checkout/{course}', [OrderController::class, 'checkout'])->name('checkout');
     Route::post('/checkout/{course}/pay', [OrderController::class, 'processPayment'])->name('checkout.pay');
+    Route::get('/checkout/test/{test}', [OrderController::class, 'checkoutTest'])->name('checkout.test');
+    Route::post('/checkout/test/{test}/pay', [OrderController::class, 'processTestPayment'])->name('checkout.test.pay');
     Route::get('/orders', [OrderController::class, 'history'])->name('orders');
+    Route::get('/orders/receipt/{order}', [OrderController::class, 'receipt'])->name('orders.receipt');
 });
 
 /*
@@ -90,6 +100,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
 
     // Courses & Curriculum Management
     Route::resource('courses', CourseManagementController::class);
+    Route::post('/courses/{course}/toggle', [CourseManagementController::class, 'toggleStatus'])->name('courses.toggle');
+    Route::post('/courses/{course}/import-playlist', [CourseManagementController::class, 'importPlaylist'])->name('courses.import-playlist');
+    Route::post('/courses/{course}/save-episodes', [CourseManagementController::class, 'saveEpisodes'])->name('courses.save-episodes');
     Route::post('/courses/{course}/modules', [CourseManagementController::class, 'storeModule'])->name('courses.modules.store');
     Route::post('/modules/{module}/lessons', [CourseManagementController::class, 'storeLesson'])->name('courses.lessons.store');
     Route::delete('/lessons/{lesson}', [CourseManagementController::class, 'destroyLesson'])->name('courses.lessons.destroy');
@@ -99,6 +112,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
 
     // Mock Test Management
     Route::resource('tests', MockTestManagementController::class);
+    Route::post('/tests/{test}/toggle', [MockTestManagementController::class, 'toggleStatus'])->name('tests.toggle');
     Route::get('/tests/{test}/attempts', [MockTestManagementController::class, 'attempts'])->name('tests.attempts');
 
     // Student Management

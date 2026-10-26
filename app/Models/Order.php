@@ -14,6 +14,7 @@ class Order extends Model
     protected $fillable = [
         'user_id',
         'course_id',
+        'mock_test_id',
         'order_number',
         'amount',
         'currency',
@@ -38,6 +39,11 @@ class Order extends Model
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class);
+    }
+
+    public function mockTest(): BelongsTo
+    {
+        return $this->belongsTo(MockTest::class);
     }
 
     public function enrollment(): HasOne

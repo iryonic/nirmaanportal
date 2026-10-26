@@ -275,7 +275,7 @@
                     <button @click="userMenu = !userMenu" 
                             type="button" 
                             class="flex items-center space-x-3 p-1.5 rounded-2xl hover:bg-gray-100/80 transition focus:outline-none">
-                        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-700 to-indigo-800 text-white font-extrabold text-xs flex items-center justify-center shadow-sm">
+                        <div class="w-9 h-9 rounded-lg bg-blue-700 text-white font-extrabold text-xs flex items-center justify-center">
                             {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
                         </div>
                         <div class="hidden md:flex flex-col text-left">
@@ -334,7 +334,7 @@
         @include('partials.flash')
 
         <!-- Main Body Page Canvas -->
-        <main class="p-4 sm:p-8 flex-grow max-w-7xl w-full mx-auto space-y-6">
+        <main class="p-4 sm:p-8 flex-grow  w-full mx-auto space-y-6">
             @yield('content')
         </main>
 

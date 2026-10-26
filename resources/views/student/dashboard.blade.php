@@ -7,26 +7,26 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         
         <!-- Welcome Banner -->
-        <div class="bg-gradient-to-r from-blue-900 to-indigo-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+        <div class="bg-slate-900 rounded-2xl p-6 sm:p-8 text-white border border-slate-800 relative overflow-hidden">
             <div class="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 flex items-center justify-center pointer-events-none">
                 <img src="{{ asset('images/army-badge.svg') }}" class="h-64 w-64 object-contain">
             </div>
 
             <div class="relative z-10 max-w-2xl space-y-3">
-                <span class="px-3 py-1 rounded-full text-xs font-bold bg-white/10 text-blue-200 border border-white/20 inline-block">
+                <span class="px-3 py-1 rounded-md text-xs font-bold bg-white/10 text-blue-200 border border-white/20 inline-block">
                     🎖 Target: {{ $user->target_exam ?? 'Indian Armed Forces' }}
                 </span>
-                <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight">
+                <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">
                     Jai Hind, {{ $user->name }}!
                 </h1>
-                <p class="text-xs sm:text-sm text-blue-200 leading-relaxed">
+                <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
                     Consistency is the hallmark of every soldier. Stick to your daily study timetable and attempt weekly timed mock tests to build speed and accuracy.
                 </p>
                 <div class="pt-2 flex flex-wrap gap-3">
-                    <a href="{{ route('student.practice') }}" class="px-5 py-2.5 rounded-full text-xs font-bold text-blue-900 bg-white hover:bg-blue-50 transition shadow-sm">
+                    <a href="{{ route('student.practice') }}" class="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-900 bg-white hover:bg-slate-100 transition">
                         Practice Questions
                     </a>
-                    <a href="{{ route('student.tests.index') }}" class="px-5 py-2.5 rounded-full text-xs font-bold text-white bg-blue-600/80 hover:bg-blue-600 border border-white/20 transition">
+                    <a href="{{ route('student.tests.index') }}" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 transition">
                         Mock Tests
                     </a>
                 </div>
