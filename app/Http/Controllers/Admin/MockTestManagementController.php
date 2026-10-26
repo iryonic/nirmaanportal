@@ -12,14 +12,23 @@ use Illuminate\Support\Str;
 
 class MockTestManagementController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $tests = MockTest::with('examCategory')
-            ->withCount(['questions', 'attempts'])
-            ->latest()
-            ->paginate(10);
+        $query = MockTest::with('examCategory')->withCount(['questions', 'attempts']);
 
-        return view('admin.tests.index', compact('tests'));
+        if ($request->filled('q')) {
+            $search = $request->q;
+            $query->where('title', 'like', "%{$search}%");
+        }
+
+        if ($request->filled('category')) {
+            $query->where('exam_category_id', $request->category);
+        }
+
+        $tests = $query->latest()->paginate(10)->withQueryString();
+        $categories = ExamCategory::where('is_active', true)->get();
+
+        return view('admin.tests.index', compact('tests', 'categories'));
     }
 
     public function create()

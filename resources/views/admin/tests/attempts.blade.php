@@ -6,11 +6,20 @@
 @section('content')
 <div class="space-y-6">
     
-    <div class="flex items-center justify-between">
-        <a href="{{ route('admin.tests.index') }}" class="text-xs font-bold text-blue-700 hover:underline">
-            ← Back to Tests
-        </a>
-        <span class="text-xs text-gray-500 font-medium">Total: {{ $attempts->total() }} Submissions</span>
+    <div class="flex items-center justify-between bg-white rounded-2xl p-4 border border-gray-100 shadow-2xs">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-gray-500">
+            <a href="{{ route('admin.dashboard') }}" class="hover:text-blue-700">HQ Dashboard</a>
+            <span>&bull;</span>
+            <a href="{{ route('admin.tests.index') }}" class="hover:text-blue-700">Mock Tests</a>
+            <span>&bull;</span>
+            <span class="text-blue-700 font-bold truncate max-w-xs">{{ $test->title }} Attempts</span>
+        </div>
+        <div class="flex items-center space-x-3">
+            <span class="text-xs text-gray-500 font-medium">Total: {{ $attempts->total() }} Submissions</span>
+            <a href="{{ route('admin.tests.index') }}" class="text-xs font-bold text-gray-500 hover:text-gray-800">
+                ← Back to Tests
+            </a>
+        </div>
     </div>
 
     <div class="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-xs">

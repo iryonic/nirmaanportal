@@ -6,13 +6,22 @@
 @section('content')
 <div class="max-w-4xl mx-auto space-y-6">
     
-    <div class="flex items-center justify-between">
-        <a href="{{ route('admin.tests.index') }}" class="text-xs font-bold text-blue-700 hover:underline">
-            ← Back to Tests
-        </a>
-        <a href="{{ route('student.tests.instructions', $test->id) }}" target="_blank" class="text-xs font-bold text-gray-500 hover:text-gray-900">
-            Preview Student Experience ↗
-        </a>
+    <div class="flex items-center justify-between bg-white rounded-2xl p-4 border border-gray-100 shadow-2xs">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-gray-500">
+            <a href="{{ route('admin.dashboard') }}" class="hover:text-blue-700">HQ Dashboard</a>
+            <span>&bull;</span>
+            <a href="{{ route('admin.tests.index') }}" class="hover:text-blue-700">Mock Tests</a>
+            <span>&bull;</span>
+            <span class="text-blue-700 font-bold truncate max-w-xs">{{ $test->title }}</span>
+        </div>
+        <div class="flex items-center space-x-3">
+            <a href="{{ route('admin.tests.index') }}" class="text-xs font-bold text-gray-500 hover:text-gray-800">
+                ← Back to Tests
+            </a>
+            <a href="{{ route('student.tests.instructions', $test->slug) }}" target="_blank" class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-xs font-bold text-blue-700 border border-gray-200">
+                Live Simulation ↗
+            </a>
+        </div>
     </div>
 
     <div class="bg-white rounded-3xl p-6 sm:p-10 border border-gray-100 shadow-xl">

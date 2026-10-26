@@ -6,11 +6,17 @@
 @section('content')
 <div class="max-w-4xl mx-auto space-y-6">
     
-    <div>
-        <a href="{{ route('admin.courses.index') }}" class="text-xs font-bold text-blue-700 hover:underline">
+    <div class="flex items-center justify-between bg-white rounded-2xl p-4 border border-gray-100 shadow-2xs">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-gray-500">
+            <a href="{{ route('admin.dashboard') }}" class="hover:text-blue-700">HQ Dashboard</a>
+            <span>&bull;</span>
+            <a href="{{ route('admin.courses.index') }}" class="hover:text-blue-700">Courses</a>
+            <span>&bull;</span>
+            <span class="text-blue-700 font-bold">New Course Batch</span>
+        </div>
+        <a href="{{ route('admin.courses.index') }}" class="text-xs font-bold text-gray-500 hover:text-gray-800">
             ← Back to Courses
         </a>
-        <h1 class="text-xl font-bold text-gray-900 mt-2">New Course Information</h1>
     </div>
 
     <div class="bg-white rounded-3xl p-6 sm:p-10 border border-gray-100 shadow-xl">

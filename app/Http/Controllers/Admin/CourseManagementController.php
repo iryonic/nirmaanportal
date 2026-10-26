@@ -12,14 +12,34 @@ use Illuminate\Support\Str;
 
 class CourseManagementController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $courses = Course::with('examCategory')
-            ->withCount(['modules', 'enrollments'])
-            ->latest()
-            ->paginate(10);
+        $query = Course::with('examCategory')->withCount(['modules', 'enrollments']);
 
-        return view('admin.courses.index', compact('courses'));
+        if ($request->filled('q')) {
+            $search = $request->q;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('subtitle', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('category')) {
+            $query->where('exam_category_id', $request->category);
+        }
+
+        if ($request->filled('status')) {
+            if ($request->status === 'published') {
+                $query->where('is_published', true);
+            } elseif ($request->status === 'draft') {
+                $query->where('is_published', false);
+            }
+        }
+
+        $courses = $query->latest()->paginate(10)->withQueryString();
+        $categories = ExamCategory::where('is_active', true)->get();
+
+        return view('admin.courses.index', compact('courses', 'categories'));
     }
 
     public function create()

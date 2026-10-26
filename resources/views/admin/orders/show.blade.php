@@ -6,8 +6,15 @@
 @section('content')
 <div class="max-w-3xl mx-auto space-y-6">
     
-    <div>
-        <a href="{{ route('admin.orders.index') }}" class="text-xs font-bold text-blue-700 hover:underline">
+    <div class="flex items-center justify-between bg-white rounded-2xl p-4 border border-gray-100 shadow-2xs">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-gray-500">
+            <a href="{{ route('admin.dashboard') }}" class="hover:text-blue-700">HQ Dashboard</a>
+            <span>&bull;</span>
+            <a href="{{ route('admin.orders.index') }}" class="hover:text-blue-700">Orders</a>
+            <span>&bull;</span>
+            <span class="text-blue-700 font-bold truncate max-w-xs">{{ $order->order_number }}</span>
+        </div>
+        <a href="{{ route('admin.orders.index') }}" class="text-xs font-bold text-gray-500 hover:text-gray-800">
             ← Back to Orders
         </a>
     </div>

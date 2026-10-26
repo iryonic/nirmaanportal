@@ -6,16 +6,25 @@
 @section('content')
 <div class="space-y-8 max-w-5xl mx-auto">
     
-    <div class="flex items-center justify-between">
-        <a href="{{ route('admin.students.index') }}" class="text-xs font-bold text-blue-700 hover:underline">
-            ← Back to Student Directory
-        </a>
-        <form action="{{ route('admin.students.toggle', $student->id) }}" method="POST">
-            @csrf
-            <button type="submit" class="px-4 py-2 rounded-full text-xs font-bold {{ $student->is_active ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200' }}">
-                {{ $student->is_active ? 'Suspend Account' : 'Reactivate Account' }}
-            </button>
-        </form>
+    <div class="flex items-center justify-between bg-white rounded-2xl p-4 border border-gray-100 shadow-2xs">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-gray-500">
+            <a href="{{ route('admin.dashboard') }}" class="hover:text-blue-700">HQ Dashboard</a>
+            <span>&bull;</span>
+            <a href="{{ route('admin.students.index') }}" class="hover:text-blue-700">Cadets</a>
+            <span>&bull;</span>
+            <span class="text-blue-700 font-bold truncate max-w-xs">{{ $student->name }}</span>
+        </div>
+        <div class="flex items-center space-x-3">
+            <a href="{{ route('admin.students.index') }}" class="text-xs font-bold text-gray-500 hover:text-gray-800">
+                ← Back to Cadets Roster
+            </a>
+            <form action="{{ route('admin.students.toggle', $student->id) }}" method="POST">
+                @csrf
+                <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-bold transition {{ $student->is_active ? 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200' }}">
+                    {{ $student->is_active ? 'Suspend Account' : 'Reactivate Account' }}
+                </button>
+            </form>
+        </div>
     </div>
 
     <!-- Student Info Card -->

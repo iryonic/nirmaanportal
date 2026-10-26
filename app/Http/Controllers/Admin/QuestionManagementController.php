@@ -13,6 +13,15 @@ class QuestionManagementController extends Controller
     {
         $query = Question::with('examCategory');
 
+        if ($request->filled('q')) {
+            $search = $request->q;
+            $query->where(function ($q) use ($search) {
+                $q->where('question_text', 'like', "%{$search}%")
+                  ->orWhere('topic', 'like', "%{$search}%")
+                  ->orWhere('explanation', 'like', "%{$search}%");
+            });
+        }
+
         if ($request->filled('subject')) {
             $query->where('subject', $request->subject);
         }

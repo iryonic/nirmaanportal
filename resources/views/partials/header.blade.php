@@ -40,25 +40,77 @@
 
                 <div class="h-4 w-px bg-gray-200"></div>
 
-                <!-- Auth Buttons -->
+                <!-- Auth Controls -->
                 @auth
-                    @if(Auth::user()->isAdmin())
-                        <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center px-4 py-2 text-xs font-semibold rounded-full text-white bg-slate-900 hover:bg-slate-800 shadow-sm transition">
-                            <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                            Admin Console
-                        </a>
-                    @else
-                        <a href="{{ route('student.dashboard') }}" class="inline-flex items-center px-4 py-2 text-xs font-semibold rounded-full text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 transition shadow-sm">
-                            <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                            {{ Str::limit(Auth::user()->name, 14) }}
-                        </a>
-                    @endif
-                    <form action="{{ route('logout') }}" method="POST" class="inline">
-                        @csrf
-                        <button type="submit" title="Sign Out" class="text-gray-400 hover:text-gray-600 p-1 rounded-full transition">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    <div class="relative" x-data="{ menuOpen: false }">
+                        <button @click="menuOpen = !menuOpen" 
+                                type="button" 
+                                class="flex items-center space-x-2.5 px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50/80 hover:bg-gray-100 transition focus:outline-none">
+                            <div class="w-7 h-7 rounded-full {{ Auth::user()->isAdmin() ? 'bg-slate-900' : 'bg-blue-700' }} text-white font-bold text-xs flex items-center justify-center">
+                                {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                            </div>
+                            <span class="text-xs font-bold text-gray-800 max-w-[120px] truncate">{{ Auth::user()->name }}</span>
+                            <span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase {{ Auth::user()->isAdmin() ? 'bg-slate-800 text-white' : 'bg-blue-100 text-blue-800' }}">
+                                {{ Auth::user()->isAdmin() ? 'Officer' : 'Cadet' }}
+                            </span>
+                            <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </button>
-                    </form>
+
+                        <div x-show="menuOpen" 
+                             @click.away="menuOpen = false"
+                             x-transition:enter="transition ease-out duration-100"
+                             x-transition:enter-start="transform opacity-0 scale-95"
+                             x-transition:enter-end="transform opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-75"
+                             x-transition:leave-start="transform opacity-100 scale-100"
+                             x-transition:leave-end="transform opacity-0 scale-95"
+                             class="absolute right-0 mt-2 w-60 bg-white rounded-2xl shadow-xl border border-gray-100 p-2 z-50 text-xs" 
+                             style="display:none;">
+                            
+                            <div class="px-3 py-2 border-b border-gray-100 bg-gray-50/60 rounded-xl mb-1">
+                                <p class="font-bold text-gray-900 truncate">{{ Auth::user()->name }}</p>
+                                <p class="text-[11px] text-gray-500 truncate">{{ Auth::user()->email }}</p>
+                            </div>
+
+                            @if(Auth::user()->isAdmin())
+                                <a href="{{ route('admin.dashboard') }}" class="flex items-center px-3 py-2 rounded-lg hover:bg-blue-50 text-blue-700 font-bold">
+                                    <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                                    Command Dashboard
+                                </a>
+                                <a href="{{ route('student.dashboard') }}" class="flex items-center px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-700 font-medium">
+                                    <svg class="w-4 h-4 text-gray-400 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"></path></svg>
+                                    Student View
+                                </a>
+                            @else
+                                <a href="{{ route('student.dashboard') }}" class="flex items-center px-3 py-2 rounded-lg hover:bg-blue-50 text-blue-700 font-bold">
+                                    <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                                    Cadet Dashboard
+                                </a>
+                                <a href="{{ route('student.practice') }}" class="flex items-center px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-700 font-medium">
+                                    <svg class="w-4 h-4 text-gray-400 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                                    Practice Drill Bank
+                                </a>
+                                <a href="{{ route('student.tests.index') }}" class="flex items-center px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-700 font-medium">
+                                    <svg class="w-4 h-4 text-gray-400 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    CBT Mock Tests
+                                </a>
+                                <a href="{{ route('student.orders') }}" class="flex items-center px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-700 font-medium">
+                                    <svg class="w-4 h-4 text-gray-400 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                    My Receipts
+                                </a>
+                            @endif
+
+                            <div class="border-t border-gray-100 my-1"></div>
+
+                            <form action="{{ route('logout') }}" method="POST">
+                                @csrf
+                                <button type="submit" class="w-full flex items-center px-3 py-2 rounded-lg hover:bg-red-50 text-red-600 font-bold transition">
+                                    <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                                    Sign Out
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 @else
                     <a href="{{ route('login') }}" class="inline-flex items-center px-5 py-2 text-sm font-semibold rounded-full text-blue-700 bg-blue-50/60 border border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-all shadow-xs">
                         Sign In

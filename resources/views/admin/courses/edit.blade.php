@@ -6,13 +6,22 @@
 @section('content')
 <div class="space-y-8 max-w-5xl mx-auto">
     
-    <div class="flex items-center justify-between">
-        <a href="{{ route('admin.courses.index') }}" class="text-xs font-bold text-blue-700 hover:underline">
-            ← Back to Courses
-        </a>
-        <a href="{{ route('courses.show', $course->slug) }}" target="_blank" class="text-xs font-bold text-gray-500 hover:text-gray-900">
-            View Live Course Page ↗
-        </a>
+    <div class="flex items-center justify-between bg-white rounded-2xl p-4 border border-gray-100 shadow-2xs">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-gray-500">
+            <a href="{{ route('admin.dashboard') }}" class="hover:text-blue-700">HQ Dashboard</a>
+            <span>&bull;</span>
+            <a href="{{ route('admin.courses.index') }}" class="hover:text-blue-700">Courses</a>
+            <span>&bull;</span>
+            <span class="text-blue-700 font-bold truncate max-w-xs">{{ $course->title }}</span>
+        </div>
+        <div class="flex items-center space-x-3">
+            <a href="{{ route('admin.courses.index') }}" class="text-xs font-bold text-gray-500 hover:text-gray-800">
+                ← Back to Courses
+            </a>
+            <a href="{{ route('courses.show', $course->slug) }}" target="_blank" class="px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-xs font-bold text-blue-700 border border-gray-200">
+                Live Preview ↗
+            </a>
+        </div>
     </div>
 
     <!-- Course Basic Details Edit Form -->
