@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
+  <circle cx="40" cy="40" r="38" fill="#B45309" />
+  <circle cx="40" cy="40" r="34" stroke="#D19C4C" stroke-width="2" />
+  <!-- Shield & Star -->
+  <g transform="translate(24, 20) scale(1)">
+    <path d="M16 2 L28 8 L28 20 C28 28, 16 34, 16 34 C16 34, 4 28, 4 20 L4 8 Z" fill="#D97706" stroke="#FEF08A" stroke-width="2" />
+    <polygon points="16,10 18,14 23,15 19,18 20,22 16,20 12,22 13,18 9,15 14,14" fill="#FEF08A" />
+  </g>
+</svg>

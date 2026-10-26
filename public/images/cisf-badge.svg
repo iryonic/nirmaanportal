@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
+  <circle cx="40" cy="40" r="38" fill="#C2410C" />
+  <circle cx="40" cy="40" r="34" stroke="#D19C4C" stroke-width="2" />
+  <!-- Security emblem -->
+  <g transform="translate(24, 20) scale(1)">
+    <circle cx="16" cy="18" r="14" fill="#EA580C" stroke="#FEF08A" stroke-width="2" />
+    <path d="M16 8 L16 28 M6 18 L26 18" stroke="#FEF08A" stroke-width="2" stroke-linecap="round" />
+    <circle cx="16" cy="18" r="5" fill="#FEF08A" />
+  </g>
+</svg>

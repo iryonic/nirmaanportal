@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" fill="none">
+  <circle cx="40" cy="40" r="38" fill="#475569" />
+  <circle cx="40" cy="40" r="34" stroke="#D19C4C" stroke-width="2" />
+  <!-- Flame / Torch of vigilance -->
+  <g transform="translate(26, 18) scale(1)">
+    <path d="M14 6 C10 14, 18 16, 14 24 C20 18, 16 12, 14 6 Z" fill="#FBBF24" />
+    <path d="M10 24 L18 24 L16 32 L12 32 Z" fill="#94A3B8" stroke="#FEF08A" stroke-width="1.5" />
+  </g>
+</svg>
