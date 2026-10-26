@@ -282,7 +282,7 @@
 
                     <!-- Hand-Script Badge (from screenshot) -->
                     <div class="hidden lg:block absolute -right-20 top-2 transform rotate-6">
-                        <span class="font-serif italic text-sm text-[#1E3A8A] font-bold block">
+                        <span class="font-serif italic text-2xl text-[#1E3A8A] font-bold block">
                             Your Success
                         </span>
                         <span class="font-serif italic text-base text-[#D97706] font-extrabold block -mt-1 underline decoration-wavy decoration-[#D97706]">
