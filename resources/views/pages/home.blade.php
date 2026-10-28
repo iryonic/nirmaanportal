@@ -3,9 +3,6 @@
 @section('title', 'Nirmaan — Complete Education & Defence Exam Preparation Platform')
 
 @section('content')
-<!-- Creative Homepage Preloader -->
-@include('partials.preloader')
-
 <div class="overflow-hidden">
 
     <!-- 1. HERO SECTION -->
@@ -672,89 +669,216 @@
         </div>
     </section>
 
-    <!-- 6. WHAT OUR STUDENTS SAY -->
-    <section class="py-16 bg-slate-50 border-t border-slate-200" x-data="{ currentSlide: 0 }">
+    <!-- 6. WHAT OUR STUDENTS SAY (SLIDERABLE) -->
+    <script>
+        window.studentSlider = function() {
+            return {
+                currentIndex: 0,
+                visibleCards: 3,
+                autoplayTimer: null,
+                testimonials: [
+                    {
+                        name: 'Rohit Sharma',
+                        initials: 'RS',
+                        rank: 'Indian Army (Agniveer GD - Selected)',
+                        verifiedBadge: 'Army CEE Qualified',
+                        tagClass: 'bg-emerald-50 text-emerald-800 border border-emerald-200',
+                        avatarClass: 'bg-emerald-50 text-emerald-900 border-emerald-100',
+                        quote: 'Nirmaan’s mock tests are exactly like the real CEE exam. The negative marking simulation and time analysis helped me pinpoint my weak areas in Physics & Maths.'
+                    },
+                    {
+                        name: 'Neha Singh',
+                        initials: 'NS',
+                        rank: 'Indian Air Force (AFCAT Flying Branch)',
+                        verifiedBadge: 'AFCAT Merit In',
+                        tagClass: 'bg-sky-50 text-sky-800 border border-sky-200',
+                        avatarClass: 'bg-sky-50 text-sky-900 border-sky-100',
+                        quote: 'The video classes are very clear and structured. Former defence officers gave practical insights for the AFSB interview that you simply don’t get anywhere else.'
+                    },
+                    {
+                        name: 'Vikramaditya Rathore',
+                        initials: 'VR',
+                        rank: 'National Defence Academy (NDA 152 - AIR 68)',
+                        verifiedBadge: 'NDA Recommended',
+                        tagClass: 'bg-amber-50 text-amber-800 border border-amber-200',
+                        avatarClass: 'bg-amber-50 text-amber-900 border-amber-100',
+                        quote: 'The SSB psychological guidance and lecturette mock sessions gave me immense confidence during the 5-day board. Nirmaan is the best platform for serious defence aspirants.'
+                    },
+                    {
+                        name: 'Aman Kumar',
+                        initials: 'AK',
+                        rank: 'BSF Constable (GD - Selected)',
+                        verifiedBadge: 'BSF Final Selection',
+                        tagClass: 'bg-teal-50 text-teal-800 border border-teal-200',
+                        avatarClass: 'bg-teal-50 text-teal-900 border-teal-100',
+                        quote: 'Excellent study material and exact exam pattern based question banks. Daily practice gave me the speed and accuracy needed to comfortably clear the cutoff.'
+                    },
+                    {
+                        name: 'Pooja Deshmukh',
+                        initials: 'PD',
+                        rank: 'Combined Defence Services (CDS OTA Chennai)',
+                        verifiedBadge: 'CDS OTA Merit',
+                        tagClass: 'bg-blue-50 text-blue-950 border border-blue-200',
+                        avatarClass: 'bg-blue-50 text-blue-950 border-blue-100',
+                        quote: 'The current affairs compendium and topic-wise sectional tests made General Knowledge effortless. I cleared CDS on my very first attempt thanks to the faculty here.'
+                    },
+                    {
+                        name: 'Sandeep Yadav',
+                        initials: 'SY',
+                        rank: 'Indian Navy (SSR / Agniveer - INS Chilka)',
+                        verifiedBadge: 'Navy SSR Qualified',
+                        tagClass: 'bg-indigo-50 text-indigo-800 border border-indigo-200',
+                        avatarClass: 'bg-indigo-50 text-indigo-900 border-indigo-100',
+                        quote: 'Live doubt clearing sessions and comprehensive bilingual study notes gave me a huge edge. The national mock test rankings motivated me to improve every single day.'
+                    }
+                ],
+                init() {
+                    this.updateVisibleCards();
+                    window.addEventListener('resize', () => this.updateVisibleCards());
+                    this.startAutoplay();
+                },
+                updateVisibleCards() {
+                    if (window.innerWidth < 640) {
+                        this.visibleCards = 1;
+                    } else if (window.innerWidth < 1024) {
+                        this.visibleCards = 2;
+                    } else {
+                        this.visibleCards = 3;
+                    }
+                    if (this.currentIndex > this.maxIndex) {
+                        this.currentIndex = this.maxIndex;
+                    }
+                },
+                get maxIndex() {
+                    return Math.max(0, this.testimonials.length - this.visibleCards);
+                },
+                next() {
+                    if (this.currentIndex < this.maxIndex) {
+                        this.currentIndex++;
+                    } else {
+                        this.currentIndex = 0;
+                    }
+                },
+                prev() {
+                    if (this.currentIndex > 0) {
+                        this.currentIndex--;
+                    } else {
+                        this.currentIndex = this.maxIndex;
+                    }
+                },
+                goTo(index) {
+                    this.currentIndex = Math.max(0, Math.min(index, this.maxIndex));
+                },
+                startAutoplay() {
+                    this.pauseAutoplay();
+                    this.autoplayTimer = setInterval(() => {
+                        this.next();
+                    }, 4500);
+                },
+                pauseAutoplay() {
+                    if (this.autoplayTimer) {
+                        clearInterval(this.autoplayTimer);
+                        this.autoplayTimer = null;
+                    }
+                }
+            };
+        };
+    </script>
+
+    <section class="py-16 sm:py-20 bg-slate-50 border-t border-slate-200 overflow-hidden" 
+             x-data="studentSlider()"
+             @mouseenter="pauseAutoplay()"
+             @mouseleave="startAutoplay()">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-end justify-between mb-10">
+            <!-- Header Row with Controls -->
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
                 <div>
-                    <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900">What Our Students Say</h2>
-                    <p class="text-sm text-slate-500 mt-1">Hear from our learners who achieved their dreams with Nirmaan.</p>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <button @click="currentSlide = Math.max(0, currentSlide - 1)" class="w-8 h-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:bg-slate-50 transition shadow-2xs">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                    </button>
-                    <button @click="currentSlide = Math.min(1, currentSlide + 1)" class="w-8 h-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-600 hover:bg-slate-50 transition shadow-2xs">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Testimonials Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Testimonial 1 -->
-                <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-2xs flex flex-col justify-between">
-                    <p class="text-sm text-slate-700 italic leading-relaxed">
-                        “Nirmaan’s mock tests are exactly like the real exam. The analysis helped me improve my weak areas.”
-                    </p>
-                    <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-9 h-9 rounded-lg bg-blue-50 text-blue-950 font-bold flex items-center justify-center text-xs border border-blue-100">
-                                RS
-                            </div>
-                            <div>
-                                <h4 class="text-xs font-bold text-slate-900">Rohit Sharma</h4>
-                                <span class="text-[11px] text-slate-500 block">Indian Army (Selected)</span>
-                            </div>
-                        </div>
-                        <div class="flex text-amber-400 text-xs">
-                            ★★★★★
-                        </div>
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/80 text-blue-950 text-xs font-bold mb-2 shadow-2xs">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-950"></span>
+                        <span class="uppercase tracking-wider">SUCCESS STORIES</span>
                     </div>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">What Our Students Say</h2>
+                    <p class="text-xs sm:text-sm text-slate-500 mt-1">Hear from inspiring cadets and officers who achieved their defence dreams with Nirmaan.</p>
                 </div>
 
-                <!-- Testimonial 2 -->
-                <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-2xs flex flex-col justify-between">
-                    <p class="text-sm text-slate-700 italic leading-relaxed">
-                        “The video classes are very clear and well structured. I could study at my own pace.”
-                    </p>
-                    <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-9 h-9 rounded-lg bg-slate-100 text-slate-800 font-bold flex items-center justify-center text-xs border border-slate-200">
-                                NS
-                            </div>
-                            <div>
-                                <h4 class="text-xs font-bold text-slate-900">Neha Singh</h4>
-                                <span class="text-[11px] text-slate-500 block">Indian Air Force (Selected)</span>
-                            </div>
-                        </div>
-                        <div class="flex text-amber-400 text-xs">
-                            ★★★★★
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Testimonial 3 -->
-                <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-2xs flex flex-col justify-between">
-                    <p class="text-sm text-slate-700 italic leading-relaxed">
-                        “Excellent study material and exact exam pattern based tests. Highly recommended!”
-                    </p>
-                    <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-800 font-bold flex items-center justify-center text-xs border border-emerald-100">
-                                AK
-                            </div>
-                            <div>
-                                <h4 class="text-xs font-bold text-slate-900">Aman Kumar</h4>
-                                <span class="text-[11px] text-slate-500 block">BSF (Selected)</span>
-                            </div>
-                        </div>
-                        <div class="flex text-amber-400 text-xs">
-                            ★★★★★
-                        </div>
+                <!-- Navigation Controls -->
+                <div class="flex items-center space-x-3 shrink-0">
+                    <span class="text-xs font-mono text-slate-400 hidden sm:inline" x-text="`0${currentIndex + 1} / 0${maxIndex + 1}`"></span>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" 
+                                @click="prev()" 
+                                class="w-9 h-9 rounded-xl border border-slate-200 bg-white hover:bg-blue-950 hover:text-white text-slate-800 shadow-2xs flex items-center justify-center transition-all duration-200 focus:outline-none"
+                                aria-label="Previous Testimonial">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        </button>
+                        <button type="button" 
+                                @click="next()" 
+                                class="w-9 h-9 rounded-xl border border-slate-200 bg-white hover:bg-blue-950 hover:text-white text-slate-800 shadow-2xs flex items-center justify-center transition-all duration-200 focus:outline-none"
+                                aria-label="Next Testimonial">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </button>
                     </div>
                 </div>
             </div>
+
+            <!-- Slider Viewport -->
+            <div class="relative overflow-hidden -mx-3 px-3 py-2">
+                <div class="flex transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                     :style="`transform: translateX(-${currentIndex * (100 / visibleCards)}%);`">
+                    
+                    <template x-for="(item, index) in testimonials" :key="index">
+                        <div class="w-full sm:w-1/2 lg:w-1/3 flex-shrink-0 px-3">
+                            <div class="h-full bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-7 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all duration-300 flex flex-col justify-between group">
+                                <div>
+                                    <!-- Top Row: Verified Badge & Stars -->
+                                    <div class="flex items-center justify-between mb-4">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider"
+                                              :class="item.tagClass">
+                                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                            <span x-text="item.verifiedBadge"></span>
+                                        </span>
+                                        <div class="flex text-amber-400 text-xs tracking-tighter">
+                                            ★★★★★
+                                        </div>
+                                    </div>
+
+                                    <!-- Quote Content -->
+                                    <p class="text-slate-700 text-xs sm:text-sm leading-relaxed italic" x-text="`“${item.quote}”`">
+                                    </p>
+                                </div>
+
+                                <!-- Bottom Author Information -->
+                                <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                                    <div class="flex items-center space-x-3 min-w-0">
+                                        <div class="w-10 h-10 rounded-xl font-extrabold flex items-center justify-center text-xs shrink-0 shadow-2xs border"
+                                             :class="item.avatarClass"
+                                             x-text="item.initials">
+                                        </div>
+                                        <div class="min-w-0">
+                                            <h4 class="text-xs sm:text-sm font-bold text-slate-900 truncate" x-text="item.name"></h4>
+                                            <span class="text-[11px] text-slate-500 font-medium block truncate" x-text="item.rank"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                </div>
+            </div>
+
+            <!-- Bottom Pagination Dots -->
+            <div class="mt-8 flex items-center justify-center space-x-2">
+                <template x-for="idx in (maxIndex + 1)" :key="idx">
+                    <button type="button" 
+                            @click="goTo(idx - 1)" 
+                            :class="currentIndex === (idx - 1) ? 'w-8 bg-blue-950' : 'w-2 bg-slate-200 hover:bg-slate-300'"
+                            class="h-2 rounded-full transition-all duration-300 focus:outline-none"
+                            :aria-label="`Go to slide ${idx}`">
+                    </button>
+                </template>
+            </div>
+
         </div>
     </section>
 

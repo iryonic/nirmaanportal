@@ -21,6 +21,9 @@
     @stack('styles')
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-full flex flex-col font-sans pb-20 md:pb-0 selection:bg-blue-100 selection:text-blue-950 antialiased">
+    <!-- Global Minimalist Frontend Preloader -->
+    @include('partials.preloader')
+
     <!-- Unified Top Header -->
     @include('partials.header')
 
