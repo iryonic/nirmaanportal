@@ -77,7 +77,9 @@ class HomeController extends Controller
             ],
         ];
 
-        return view('pages.home', compact('categories', 'featuredCourses', 'faqs', 'freeMockTest', 'latestNotifications', 'impactStats'));
+        $featuredVideo = SiteSetting::getFeaturedVideo();
+
+        return view('pages.home', compact('categories', 'featuredCourses', 'faqs', 'freeMockTest', 'latestNotifications', 'impactStats', 'featuredVideo'));
     }
 
     public function about()

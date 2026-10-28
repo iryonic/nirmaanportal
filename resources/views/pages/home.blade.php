@@ -363,6 +363,116 @@
         </div>
     </section>
 
+    <!-- 3.5 DYNAMIC FEATURED YOUTUBE VIDEO SECTION -->
+    @if(isset($featuredVideo) && ($featuredVideo['enabled'] ?? true))
+    <section class="py-16 sm:py-24 bg-gradient-to-b from-white via-slate-50/70 to-white border-y border-slate-200/80 relative overflow-hidden" id="featured-video">
+        <!-- Subtle Ambient Background Accents -->
+        <div class="absolute inset-0 pointer-events-none opacity-[0.35]" style="background-image: radial-gradient(#94A3B8 1px, transparent 1px); background-size: 28px 28px;"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-blue-100/40 rounded-full blur-[120px] pointer-events-none"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <!-- Section Header -->
+            <div class="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
+                <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-rose-50 border border-rose-200/80 text-rose-700 text-xs font-bold mb-3 shadow-2xs">
+                    <span class="w-2 h-2 rounded-full bg-rose-600 animate-pulse"></span>
+                    <span class="uppercase tracking-wider">{{ $featuredVideo['badge'] ?? 'INSIDE NIRMAAN ACADEMY' }}</span>
+                </div>
+                <h2 class="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                    {{ $featuredVideo['title'] ?? 'Experience Training, Drills & Classroom Life at Nirmaan' }}
+                </h2>
+                <p class="text-sm sm:text-base text-slate-600 mt-3 leading-relaxed">
+                    {{ $featuredVideo['subtitle'] ?? 'Get an exclusive inside look at our smart digital classrooms, physical obstacle grounds, and SSB interview chambers guided by former defence officers.' }}
+                </p>
+            </div>
+
+            <!-- Professional Cinematic Video Player Container -->
+            <div class="max-w-7xl mx-auto" x-data="{ isPlaying: false }">
+                <div class="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-200/90 shadow-[0_20px_50px_-10px_rgba(23,37,84,0.18)] bg-slate-950 aspect-video group">
+                    
+                    <!-- Poster & Play Trigger (Loaded initially for blazing performance) -->
+                    <template x-if="!isPlaying">
+                        <div class="absolute inset-0 w-full h-full cursor-pointer select-none" 
+                             @click="isPlaying = true">
+                            
+                            <!-- High-Res Thumbnail Image -->
+                            <img src="{{ $featuredVideo['thumbnail'] }}" 
+                                 alt="{{ $featuredVideo['title'] }}" 
+                                 class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-out">
+                            
+                            <!-- Cinematic Gradient Vignette -->
+                            <div class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-slate-950/20"></div>
+
+                            <!-- Center Glowing Play Button -->
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="relative flex items-center justify-center">
+                                    <!-- Animated Wave Rings -->
+                                    <span class="absolute w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-rose-500/30 animate-ping pointer-events-none"></span>
+                                    <span class="absolute w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-white/10 pointer-events-none"></span>
+                                    
+                                    <!-- Play Button Capsule -->
+                                    <div class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/95 text-rose-600 flex items-center justify-center shadow-2xl backdrop-blur-md transform group-hover:scale-110 transition-transform duration-300 border border-white/80">
+                                        <svg class="w-7 h-7 sm:w-8 sm:h-8 ml-1 text-rose-600 drop-shadow-sm" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M8 5v14l11-7z"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bottom Video Meta Bar -->
+                            <div class="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 flex items-center justify-between text-white text-xs sm:text-sm">
+                                <div class="flex items-center space-x-2.5">
+                                    <span class="px-2.5 py-1 rounded-md bg-rose-600/90 text-white font-bold text-[10px] sm:text-xs uppercase tracking-wider shadow-sm flex items-center gap-1.5">
+                                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+                                        <span>Click to Play </span>
+                                    </span>
+                                    <span class="hidden sm:inline-block text-white/80 text-xs font-medium">Full HD Preview</span>
+                                </div>
+                                <div class="flex items-center space-x-2 text-[11px] font-mono text-white/75 bg-slate-950/60 backdrop-blur-xs px-2.5 py-1 rounded-md border border-white/10">
+                                    <span>Nirmaan Academy</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </template>
+
+                    <!-- Responsive Iframe (Mounted only when play is triggered) -->
+                    <template x-if="isPlaying">
+                        <iframe src="{{ $featuredVideo['embed_url'] }}" 
+                                title="{{ $featuredVideo['title'] }}" 
+                                class="w-full h-full border-0 absolute inset-0" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                allowfullscreen>
+                        </iframe>
+                    </template>
+
+                </div>
+
+            
+
+                <!-- CTA Row -->
+                <div class="mt-8 flex flex-wrap items-center justify-center gap-4 text-center">
+                    <a href="{{ !empty($featuredVideo['cta_url']) ? $featuredVideo['cta_url'] : route('courses.index') }}" 
+                       class="inline-flex items-center space-x-2 px-8 py-3.5 rounded-lg text-sm font-semibold text-white bg-blue-950 hover:bg-blue-900 shadow-2xs hover:shadow-xs transition">
+                        <span>{{ $featuredVideo['cta_text'] ?? 'Explore All Courses' }}</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    </a>
+
+                    @if(!empty($featuredVideo['url']))
+                    <a href="{{ $featuredVideo['url'] }}" 
+                       target="_blank" 
+                       rel="noopener noreferrer" 
+                       class="inline-flex items-center space-x-2 px-5 py-3.5 rounded-lg text-sm font-semibold text-slate-700 hover:text-blue-950 bg-white hover:bg-slate-50 border border-slate-200 transition shadow-2xs">
+                        <svg class="w-4 h-4 text-rose-600" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+                        <span>Watch on YouTube</span>
+                    </a>
+                    @endif
+                </div>
+
+            </div>
+        </div>
+    </section>
+    @endif
+
     <!-- 4. OUR IMPACT SECTION -->
     <script>
         window.impactCounter = function(target, duration = 2000, decimals = 0, suffix = '', prefix = '') {

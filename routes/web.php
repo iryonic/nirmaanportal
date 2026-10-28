@@ -137,6 +137,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     // Site Content & Settings Management
     Route::get('/content', [ContentManagementController::class, 'index'])->name('content.index');
     Route::post('/content/settings', [ContentManagementController::class, 'updateSettings'])->name('content.settings');
+    Route::post('/content/video', [ContentManagementController::class, 'updateFeaturedVideo'])->name('content.video');
     Route::post('/content/faqs', [ContentManagementController::class, 'storeFaq'])->name('content.faqs.store');
     Route::delete('/content/faqs/{faq}', [ContentManagementController::class, 'destroyFaq'])->name('content.faqs.destroy');
     Route::post('/content/inquiries/{inquiry}/toggle', [ContentManagementController::class, 'toggleInquiry'])->name('content.inquiries.toggle');
