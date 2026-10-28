@@ -3,6 +3,9 @@
 @section('title', 'Nirmaan — Complete Education & Defence Exam Preparation Platform')
 
 @section('content')
+<!-- Creative Homepage Preloader -->
+@include('partials.preloader')
+
 <div class="overflow-hidden">
 
     <!-- 1. HERO SECTION -->
