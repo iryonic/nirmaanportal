@@ -13,6 +13,9 @@
     --color-brand-blue: #1D4ED8;
     --color-gold: #C7A56B;
   }
+  *{
+    transition: all ease-in-out 0.3s;
+  }
   
   body {
     font-family: var(--font-sans);

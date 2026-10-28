@@ -17,7 +17,7 @@
 
     @stack('styles')
 </head>
-<body class="bg-[#FAF9F6] text-gray-800 min-h-full flex flex-col font-sans pb-20 md:pb-0 selection:bg-blue-100 selection:text-blue-900">
+<body class="bg-slate-50 text-slate-800 min-h-full flex flex-col font-sans pb-20 md:pb-0 selection:bg-blue-100 selection:text-blue-950 antialiased">
     <!-- Unified Top Header -->
     @include('partials.header')
 

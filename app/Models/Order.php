@@ -20,6 +20,8 @@ class Order extends Model
         'currency',
         'status',
         'payment_gateway',
+        'gateway_mode',
+        'razorpay_order_id',
         'payment_id',
         'payment_signature',
         'paid_at',

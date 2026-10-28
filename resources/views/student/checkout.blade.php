@@ -10,14 +10,31 @@
     $price = (float) ($item->price > 0 ? $item->price : 499.00);
     $originalPrice = (float) ($item->original_price ?? ($price * 1.4));
     $baseDiscount = max(0, $originalPrice - $price);
+    $razorpayJson = json_encode($razorpayConfig ?? [
+        'enabled' => true,
+        'key_id' => '',
+        'merchant_name' => 'Nirmaan Academy',
+        'theme_color' => '#172554',
+        'mode' => 'test',
+        'has_keys' => false,
+    ]);
 @endphp
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <div class="py-8 sm:py-12 bg-gray-50 min-h-screen" 
      x-data="{
-        method: 'upi',
+        razorpayConfig: {!! $razorpayJson !!},
+        method: '{{ ($razorpayConfig['enabled'] ?? true) ? 'razorpay' : 'upi' }}',
         basePrice: {{ $price }},
         originalPrice: {{ $originalPrice }},
         baseDiscount: {{ $baseDiscount }},
+        
+        // Razorpay state
+        razorpayPaymentId: '',
+        razorpayOrderId: '',
+        razorpaySignature: '',
+        razorpayError: '',
         
         // Coupon state
         couponInput: '',
@@ -192,8 +209,101 @@
             this.couponError = '';
         },
         
-        // Submit Payment with Simulation Handshake
+        // Submit Payment with Razorpay Handshake or Gateway Switch
         submitPayment() {
+            if (this.method === 'razorpay') {
+                this.isProcessing = true;
+                this.processingMessage = 'Initializing official Razorpay secure order...';
+                this.processingProgress = 30;
+
+                fetch('{{ route('student.checkout.create-razorpay-order') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        type: '{{ $type }}',
+                        item_id: {{ $item->id }},
+                        coupon_code: this.appliedCoupon ? this.appliedCoupon.code : ''
+                    })
+                })
+                .then(res => res.json())
+                .then(orderData => {
+                    if (!orderData.success) {
+                        this.isProcessing = false;
+                        alert(orderData.message || 'Could not initiate Razorpay order. Please try again.');
+                        return;
+                    }
+
+                    this.razorpayOrderId = orderData.order_id;
+
+                    // If Razorpay SDK is available and not pure fallback simulation
+                    if (window.Razorpay && orderData.key_id && !orderData.is_simulated) {
+                        this.processingMessage = 'Awaiting payment authorization from Razorpay modal...';
+                        this.processingProgress = 50;
+
+                        const rzp = new window.Razorpay({
+                            key: orderData.key_id,
+                            amount: orderData.amount,
+                            currency: orderData.currency || 'INR',
+                            name: orderData.merchant_name || 'Nirmaan Academy',
+                            description: orderData.item_title,
+                            order_id: orderData.order_id,
+                            theme: { color: orderData.theme_color || '#172554' },
+                            prefill: {
+                                name: orderData.user.name,
+                                email: orderData.user.email,
+                                contact: orderData.user.phone
+                            },
+                            handler: (response) => {
+                                this.razorpayPaymentId = response.razorpay_payment_id;
+                                this.razorpayOrderId = response.razorpay_order_id;
+                                this.razorpaySignature = response.razorpay_signature;
+                                this.processingMessage = 'Payment confirmed! Verifying cryptographic signature...';
+                                this.processingProgress = 90;
+                                setTimeout(() => {
+                                    document.getElementById('checkout-form').submit();
+                                }, 500);
+                            },
+                            modal: {
+                                ondismiss: () => {
+                                    this.isProcessing = false;
+                                }
+                            }
+                        });
+
+                        rzp.on('payment.failed', (resp) => {
+                            this.isProcessing = false;
+                            alert('Payment could not be completed: ' + (resp.error?.description || 'Gateway error'));
+                        });
+
+                        rzp.open();
+                    } else {
+                        // Safe Sandbox / Fallback mode
+                        this.processingMessage = 'Running Razorpay Sandbox handshake...';
+                        this.processingProgress = 65;
+                        setTimeout(() => {
+                            this.razorpayPaymentId = 'pay_sim_' + Math.random().toString(36).substring(2, 14);
+                            this.razorpaySignature = 'sig_sim_' + Math.random().toString(36).substring(2, 20);
+                            this.processingMessage = 'Payment verified! Finalizing cadet enrollment...';
+                            this.processingProgress = 100;
+                            setTimeout(() => {
+                                document.getElementById('checkout-form').submit();
+                            }, 500);
+                        }, 900);
+                    }
+                })
+                .catch(err => {
+                    this.isProcessing = false;
+                    alert('Network error communicating with payment engine: ' + err.message);
+                });
+
+                return;
+            }
+
+            // Non-Razorpay fallback methods
             this.isProcessing = true;
             this.processingMessage = 'Connecting to NPCI & RBI Payment Switch...';
             this.processingProgress = 35;
@@ -306,8 +416,11 @@
                     <!-- Hidden Dynamic Fields for Controller -->
                     <input type="hidden" name="payment_method" :value="method">
                     <input type="hidden" name="coupon_code" :value="appliedCoupon ? appliedCoupon.code : ''">
-                    <input type="hidden" name="payment_reference" :value="'pay_' + Math.random().toString(36).substring(2, 10)">
-                    <input type="hidden" name="method_meta" :value="method === 'upi' ? vpaInput : (method === 'netbanking' ? selectedBank : (method === 'card' ? (card.brand + ' ending ' + (card.number.slice(-4) || 'XXXX')) : 'SANDBOX_OK'))">
+                    <input type="hidden" name="payment_reference" :value="razorpayPaymentId || ('pay_' + Math.random().toString(36).substring(2, 10))">
+                    <input type="hidden" name="razorpay_payment_id" :value="razorpayPaymentId">
+                    <input type="hidden" name="razorpay_order_id" :value="razorpayOrderId">
+                    <input type="hidden" name="razorpay_signature" :value="razorpaySignature">
+                    <input type="hidden" name="method_meta" :value="method === 'razorpay' ? ('Razorpay ' + razorpayConfig.mode.toUpperCase() + ' Mode') : (method === 'upi' ? vpaInput : (method === 'netbanking' ? selectedBank : (method === 'card' ? (card.brand + ' ending ' + (card.number.slice(-4) || 'XXXX')) : 'SANDBOX_OK')))">
 
                     <div class="bg-white rounded-2xl border border-gray-200 shadow-2xs overflow-hidden">
                         
@@ -315,7 +428,16 @@
                         <div class="p-4 sm:p-5 border-b border-gray-200 bg-gray-50/70">
                             <h3 class="text-xs font-bold uppercase tracking-wider text-gray-600 mb-3">Choose Payment Method</h3>
                             
-                            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                            <div class="grid grid-cols-2 sm:grid-cols-6 gap-2">
+                                <!-- Razorpay Tab -->
+                                <button type="button" 
+                                        @click="method = 'razorpay'"
+                                        class="col-span-2 sm:col-span-1 flex flex-col items-center justify-center p-3 rounded-xl border text-center transition relative"
+                                        :class="method === 'razorpay' ? 'bg-blue-950 border-blue-950 text-white shadow-xs font-bold ring-1 ring-blue-950' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 font-medium'">
+                                    <span class="text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-amber-400 text-blue-950 absolute -top-2 right-1.5">Official</span>
+                                    <svg class="w-5 h-5 mb-1" :class="method === 'razorpay' ? 'text-white' : 'text-blue-950'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                                    <span class="text-xs">Razorpay</span>
+                                </button>
                                 <!-- UPI Tab -->
                                 <button type="button" 
                                         @click="method = 'upi'"
@@ -361,6 +483,60 @@
                                     <svg class="w-5 h-5 mb-1 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                     <span class="text-xs">Instant Test</span>
                                 </button>
+                            </div>
+                        </div>
+
+                        <!-- Tab 0: Razorpay Official Gateway Panel -->
+                        <div x-show="method === 'razorpay'" class="p-5 sm:p-6 space-y-5">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-blue-950/20 bg-blue-950/[0.03]">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 rounded-xl bg-blue-950 text-white flex items-center justify-center font-bold text-lg shrink-0">
+                                        ₹
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center space-x-2">
+                                            <h4 class="text-xs sm:text-sm font-bold text-slate-900">Razorpay All-in-One Gateway</h4>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                                                  :class="razorpayConfig.mode === 'live' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'">
+                                                <span class="w-1.5 h-1.5 rounded-full mr-1" :class="razorpayConfig.mode === 'live' ? 'bg-amber-600' : 'bg-blue-600'"></span>
+                                                <span x-text="razorpayConfig.mode.toUpperCase() + ' MODE'"></span>
+                                            </span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-500 mt-0.5">Pay seamlessly with any UPI App (GPay, PhonePe, Paytm, BHIM), all Debit/Credit Cards, Net Banking from 50+ banks, EMI, and Wallets.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Cadet Verified Prefill Details -->
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                                <div>
+                                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Enrolling Cadet</span>
+                                    <span class="font-semibold text-slate-900 truncate block">{{ $user->name }}</span>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Candidate Email</span>
+                                    <span class="font-mono text-slate-700 truncate block">{{ $user->email }}</span>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Contact Phone</span>
+                                    <span class="font-mono text-slate-700">{{ $user->phone ?? '+91 98765 43210' }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Accepted Payment Instruments Badges -->
+                            <div class="space-y-2 pt-1">
+                                <span class="text-[11px] font-semibold text-slate-500 block">Supported Payment Channels inside Razorpay Modal:</span>
+                                <div class="flex flex-wrap gap-2 text-[11px]">
+                                    <span class="px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 font-medium">⚡ Instant UPI (Intent &amp; QR)</span>
+                                    <span class="px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 font-medium">💳 RuPay, Visa, Mastercard</span>
+                                    <span class="px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 font-medium">🏦 NetBanking (50+ Banks)</span>
+                                    <span class="px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 font-medium">⏱ No-Cost EMI &amp; PayLater</span>
+                                </div>
+                            </div>
+
+                            <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-800 flex items-center space-x-2">
+                                <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                                <span>Encrypted with SHA-256 HMAC cryptographic signature verification and instant automated LMS access unlock.</span>
                             </div>
                         </div>
 

@@ -65,9 +65,9 @@
                 <div class="flex items-center space-x-2 overflow-x-auto pb-1.5 pt-0.5 no-scrollbar">
                     <!-- All Exams Tab -->
                     <a href="{{ route('student.tests.index', request()->except('category', 'page')) }}"
-                       class="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex-shrink-0 border {{ !request('category') ? 'bg-[#0B1120] text-white border-[#0B1120]' : 'bg-gray-50 text-gray-700 border-gray-200/80 hover:bg-gray-100 hover:text-gray-900' }}">
+                       class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0 border {{ !request('category') ? 'bg-blue-950 text-white border-blue-950' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:text-slate-900' }}">
                         <span>All Examinations</span>
-                        <span class="text-[10px] px-1.5 py-0.2 rounded-full {{ !request('category') ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-700' }}">
+                        <span class="text-[10px] px-1.5 py-0.2 rounded-full {{ !request('category') ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700' }}">
                             {{ $totalPublishedTestsCount }}
                         </span>
                     </a>
@@ -87,11 +87,11 @@
                             };
                         @endphp
                         <a href="{{ route('student.tests.index', array_merge(request()->except('page'), ['category' => $cat->slug])) }}"
-                           class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex-shrink-0 border {{ $isSelected ? 'bg-blue-700 text-white border-blue-700 shadow-2xs' : 'bg-gray-50 text-gray-700 border-gray-200/80 hover:bg-gray-100 hover:text-gray-900' }}">
+                           class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0 border {{ $isSelected ? 'bg-blue-950 text-white border-blue-950 shadow-2xs' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:text-slate-900' }}">
                             <img src="{{ asset('images/' . $badgeFile) }}" alt="{{ $cat->name }}" class="w-4 h-4 object-contain flex-shrink-0">
                             <span>{{ $cat->name }}</span>
                             @if(isset($cat->mock_tests_count))
-                                <span class="text-[10px] px-1.5 py-0.2 rounded-full {{ $isSelected ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-700' }}">
+                                <span class="text-[10px] px-1.5 py-0.2 rounded-full {{ $isSelected ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700' }}">
                                     {{ $cat->mock_tests_count }}
                                 </span>
                             @endif
@@ -101,7 +101,7 @@
             </div>
 
             <!-- Search, Pricing Type & Sort Toolbar -->
-            <form action="{{ route('student.tests.index') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center pt-2 border-t border-gray-100">
+            <form action="{{ route('student.tests.index') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center pt-2 border-t border-slate-100">
                 <!-- Keep category if set -->
                 @if(request('category'))
                     <input type="hidden" name="category" value="{{ request('category') }}">
@@ -109,17 +109,17 @@
 
                 <!-- Search Input with Clear Button -->
                 <div class="sm:col-span-5 relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </span>
                     <input type="text" 
                            name="q" 
                            value="{{ request('q') }}" 
                            placeholder="Search test name, subject, or trade..." 
-                           class="w-full pl-9 pr-9 py-2 text-xs bg-gray-50 border border-gray-200/90 rounded-xl outline-none focus:bg-white focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition text-gray-800 placeholder-gray-400 font-normal">
+                           class="w-full pl-9 pr-9 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:bg-white focus:border-blue-950 focus:ring-1 focus:ring-blue-950 transition-colors text-slate-900 placeholder-slate-400 font-normal">
                     @if(request('q'))
                         <a href="{{ route('student.tests.index', request()->except('q', 'page')) }}" 
-                           class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600" 
+                           class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600" 
                            title="Clear search">
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </a>
@@ -128,7 +128,7 @@
 
                 <!-- Access Filter (Free vs Paid) -->
                 <div class="sm:col-span-3">
-                    <select name="access" onchange="this.form.submit()" class="w-full text-xs bg-gray-50 border border-gray-200/90 rounded-xl px-3 py-2 outline-none focus:bg-white focus:border-blue-600 transition text-gray-700 font-medium">
+                    <select name="access" onchange="this.form.submit()" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-blue-950 transition-colors text-slate-700 font-medium">
                         <option value="">All Access Types</option>
                         <option value="free" {{ request('access') === 'free' ? 'selected' : '' }}>Free Practice Tests</option>
                         <option value="paid" {{ request('access') === 'paid' ? 'selected' : '' }}>Premium Mock Tests</option>
@@ -137,7 +137,7 @@
 
                 <!-- Sort Order -->
                 <div class="sm:col-span-3">
-                    <select name="sort" onchange="this.form.submit()" class="w-full text-xs bg-gray-50 border border-gray-200/90 rounded-xl px-3 py-2 outline-none focus:bg-white focus:border-blue-600 transition text-gray-700 font-medium">
+                    <select name="sort" onchange="this.form.submit()" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-blue-950 transition-colors text-slate-700 font-medium">
                         <option value="latest" {{ request('sort') === 'latest' ? 'selected' : '' }}>Sort: Newest Tests</option>
                         <option value="duration_asc" {{ request('sort') === 'duration_asc' ? 'selected' : '' }}>Sort: Duration (Short-Long)</option>
                         <option value="marks_desc" {{ request('sort') === 'marks_desc' ? 'selected' : '' }}>Sort: Max Marks (High-Low)</option>
@@ -146,7 +146,7 @@
 
                 <!-- Action button -->
                 <div class="sm:col-span-1">
-                    <button type="submit" class="w-full py-2 text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-xl transition text-center shadow-2xs">
+                    <button type="submit" class="w-full py-2 text-xs font-medium text-white bg-blue-950 hover:bg-blue-900 rounded-lg transition-colors text-center shadow-2xs">
                         Filter
                     </button>
                 </div>
@@ -312,17 +312,17 @@
                                 <div class="flex-shrink-0">
                                     @if($inProgress)
                                         <a href="{{ route('student.tests.attempt', $inProgress->id) }}" 
-                                           class="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-amber-600 hover:bg-amber-700 transition shadow-2xs">
+                                           class="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 transition-colors shadow-2xs">
                                             <span>Resume Attempt &rarr;</span>
                                         </a>
                                     @elseif($hasAccess)
                                         <a href="{{ route('student.tests.instructions', $test->id) }}" 
-                                           class="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 transition shadow-2xs">
+                                           class="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium text-white bg-blue-950 hover:bg-blue-900 transition-colors shadow-2xs">
                                             <span>{{ $completed ? 'Retake Exam' : 'Start Exam' }} &rarr;</span>
                                         </a>
                                     @else
                                         <a href="{{ route('student.checkout.test', $test->id) }}" 
-                                           class="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-blue-700 hover:bg-blue-800 transition shadow-2xs">
+                                           class="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium text-white bg-blue-950 hover:bg-blue-900 transition-colors shadow-2xs">
                                             <span>Unlock ₹{{ number_format($price, 0) }} &rarr;</span>
                                         </a>
                                     @endif

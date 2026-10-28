@@ -17,6 +17,9 @@ use App\Http\Controllers\Admin\MockTestManagementController;
 use App\Http\Controllers\Admin\StudentManagementController;
 use App\Http\Controllers\Admin\OrderManagementController;
 use App\Http\Controllers\Admin\ContentManagementController;
+use App\Http\Controllers\Admin\NotificationManagementController;
+use App\Http\Controllers\Admin\PaymentSettingController;
+use App\Http\Controllers\WebhookController;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,6 +31,8 @@ Route::get('/about', [HomeController::class, 'about'])->name('about');
 Route::get('/contact', [HomeController::class, 'contact'])->name('contact');
 Route::post('/contact', [HomeController::class, 'submitContact'])->name('contact.submit');
 Route::get('/announcements', [HomeController::class, 'announcements'])->name('announcements');
+Route::get('/notifications/{notification}', [HomeController::class, 'showNotification'])->name('notifications.show');
+Route::get('/notifications/{notification}/download', [HomeController::class, 'downloadNotificationAttachment'])->name('notifications.download');
 Route::get('/search', [HomeController::class, 'search'])->name('search');
 
 Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
@@ -82,6 +87,7 @@ Route::prefix('student')->name('student.')->middleware('auth')->group(function (
 
     // Orders & Checkout
     Route::post('/checkout/validate-coupon', [OrderController::class, 'validateCoupon'])->name('checkout.validate-coupon');
+    Route::post('/checkout/create-razorpay-order', [OrderController::class, 'createRazorpayOrder'])->name('checkout.create-razorpay-order');
     Route::get('/checkout/{course}', [OrderController::class, 'checkout'])->name('checkout');
     Route::post('/checkout/{course}/pay', [OrderController::class, 'processPayment'])->name('checkout.pay');
     Route::get('/checkout/test/{test}', [OrderController::class, 'checkoutTest'])->name('checkout.test');
@@ -89,6 +95,9 @@ Route::prefix('student')->name('student.')->middleware('auth')->group(function (
     Route::get('/orders', [OrderController::class, 'history'])->name('orders');
     Route::get('/orders/receipt/{order}', [OrderController::class, 'receipt'])->name('orders.receipt');
 });
+
+// Asynchronous Payment Webhook Listeners
+Route::post('/webhooks/razorpay', [WebhookController::class, 'handleRazorpay'])->name('webhooks.razorpay');
 
 /*
 |--------------------------------------------------------------------------
@@ -131,4 +140,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::post('/content/faqs', [ContentManagementController::class, 'storeFaq'])->name('content.faqs.store');
     Route::delete('/content/faqs/{faq}', [ContentManagementController::class, 'destroyFaq'])->name('content.faqs.destroy');
     Route::post('/content/inquiries/{inquiry}/toggle', [ContentManagementController::class, 'toggleInquiry'])->name('content.inquiries.toggle');
+
+    // Notice Board & Notification Management
+    Route::resource('notifications', NotificationManagementController::class);
+    Route::post('/notifications/{notification}/toggle', [NotificationManagementController::class, 'toggleStatus'])->name('notifications.toggle');
+
+    // Payment Gateway & Razorpay Settings
+    Route::get('/settings/payment', [PaymentSettingController::class, 'index'])->name('settings.payment');
+    Route::post('/settings/payment', [PaymentSettingController::class, 'update'])->name('settings.payment.update');
+    Route::post('/settings/payment/test-connection', [PaymentSettingController::class, 'testConnection'])->name('settings.payment.test');
 });
