@@ -41,6 +41,19 @@
                     </div>
                 </form>
 
+                <!-- PWA Install Button (Appears when installable) -->
+                <button type="button"
+                        x-data="{ canInstall: false }" 
+                        x-init="window.addEventListener('pwa-installable', () => canInstall = true)"
+                        x-show="canInstall" 
+                        @click="if (window.deferredPrompt) { window.deferredPrompt.prompt(); window.deferredPrompt.userChoice.then(() => { canInstall = false; window.deferredPrompt = null; }); }"
+                        style="display:none;"
+                        title="Install Nirmaan Progressive Web App"
+                        class="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-blue-950 bg-blue-50 hover:bg-blue-100 border border-blue-200/60 transition-colors shadow-2xs">
+                    <svg class="w-3.5 h-3.5 text-blue-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    <span>Install App</span>
+                </button>
+
                 <div class="h-4 w-px bg-slate-200"></div>
 
                 <!-- Auth Controls -->

@@ -14,6 +14,9 @@
     <!-- Vite Assets -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
+    <!-- PWA Progressive Web App Meta -->
+    @include('partials.pwa-head')
+
     @stack('styles')
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-full flex font-sans antialiased selection:bg-blue-950 selection:text-white" 
@@ -394,6 +397,9 @@
         </footer>
 
     </div>
+
+    <!-- PWA Service Worker Registration -->
+    @include('partials.pwa-scripts')
 
     @stack('scripts')
 </body>
