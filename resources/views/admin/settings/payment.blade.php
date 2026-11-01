@@ -321,7 +321,7 @@ function paymentSettingsPage() {
             this.testing = true;
             this.testResult = null;
             
-            fetch('{{ route('admin.settings.payment.test') }}', {
+            fetch('{{ route('admin.settings.payment.test', [], false) }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

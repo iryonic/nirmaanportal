@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\StudentManagementController;
 use App\Http\Controllers\Admin\OrderManagementController;
 use App\Http\Controllers\Admin\ContentManagementController;
 use App\Http\Controllers\Admin\NotificationManagementController;
+use App\Http\Controllers\Admin\ResourceManagementController;
 use App\Http\Controllers\Admin\PaymentSettingController;
 use App\Http\Controllers\WebhookController;
 
@@ -115,6 +116,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::post('/courses/{course}/modules', [CourseManagementController::class, 'storeModule'])->name('courses.modules.store');
     Route::post('/modules/{module}/lessons', [CourseManagementController::class, 'storeLesson'])->name('courses.lessons.store');
     Route::delete('/lessons/{lesson}', [CourseManagementController::class, 'destroyLesson'])->name('courses.lessons.destroy');
+
+    // Study Resources & Materials Management
+    Route::resource('resources', ResourceManagementController::class);
+    Route::post('/resources/{resource}/toggle', [ResourceManagementController::class, 'toggleStatus'])->name('resources.toggle');
+    Route::get('/resources/{resource}/download', [ResourceManagementController::class, 'download'])->name('resources.download');
 
     // Question Bank Management
     Route::resource('questions', QuestionManagementController::class);

@@ -171,7 +171,7 @@
             this.couponError = '';
             this.couponSuccess = '';
             
-            fetch('{{ route('student.checkout.validate-coupon') }}', {
+            fetch('{{ route('student.checkout.validate-coupon', [], false) }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -216,7 +216,7 @@
                 this.processingMessage = 'Initializing official Razorpay secure order...';
                 this.processingProgress = 30;
 
-                fetch('{{ route('student.checkout.create-razorpay-order') }}', {
+                fetch('{{ route('student.checkout.create-razorpay-order', [], false) }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

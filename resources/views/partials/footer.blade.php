@@ -5,7 +5,7 @@
             <!-- Brand Logo -->
             <div class="flex items-center">
                 <a href="{{ route('home') }}" class="focus:outline-none">
-                    <img src="{{ asset('images/logo.svg') }}" alt="Nirmaan" class="h-12 w-auto">
+                    <img src="{{ asset('images/logo.svg') }}" alt="Nirmaan" class="h-20 w-auto">
                 </a>
             </div>
 

@@ -55,7 +55,7 @@
                         checkAnswer() {
                             if (!this.selectedOption) return;
                             this.loading = true;
-                            fetch('{{ route('student.practice.check') }}', {
+                            fetch('{{ route('student.practice.check', [], false) }}', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',

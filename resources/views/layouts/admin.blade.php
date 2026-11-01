@@ -52,8 +52,8 @@
         <!-- Sidebar Brand Header -->
         <div class="h-16 flex items-center px-4 bg-white border-b border-blue-900/40 justify-between">
             <a href="{{ route('admin.dashboard') }}" class="flex items-center space-x-2.5 group min-w-0 w-full">
-                <div class="w-full h-12 rounded-lg bg-white flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform shrink-0">
-                    <img src="{{ asset('images/logo.svg') }}" alt="Nirmaan" class="h-8 w-auto">
+                <div class="w-full h-12 rounded-lg flex items-center justify-center  group-hover:scale-105 transition-transform shrink-0">
+                    <img src="{{ asset('images/logo.svg') }}" alt="Nirmaan" class="h-20 w-auto">
                 </div>
             </a>
             <button @click="sidebarOpen = false" class="lg:hidden text-slate-500 hover:text-slate-900 p-1 rounded-md">
@@ -96,6 +96,18 @@
                     </svg>
                     <span x-show="!sidebarCollapsed" class="truncate">Courses &amp; Syllabus</span>
                     @if(request()->routeIs('admin.courses.*'))
+                        <span x-show="!sidebarCollapsed" class="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                    @endif
+                </a>
+
+                <a href="{{ route('admin.resources.index') }}" 
+                   title="Study Resources & Downloads"
+                   class="flex items-center space-x-2.5 px-2.5 py-2 rounded-lg transition-colors group {{ request()->routeIs('admin.resources.*') ? 'bg-white/10 text-white font-semibold shadow-2xs' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}">
+                    <svg class="w-6 h-6 shrink-0 {{ request()->routeIs('admin.resources.*') ? 'text-white' : 'text-slate-400 group-hover:text-white' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                    <span x-show="!sidebarCollapsed" class="truncate">Study Resources</span>
+                    @if(request()->routeIs('admin.resources.*'))
                         <span x-show="!sidebarCollapsed" class="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400"></span>
                     @endif
                 </a>
@@ -299,6 +311,10 @@
                         <a href="{{ route('admin.notifications.create') }}" class="flex items-center px-3 py-2 hover:bg-slate-50 text-slate-700 hover:text-slate-900">
                             <span class="w-2 h-2 rounded-full bg-blue-600 mr-2.5"></span>
                             Post Notice Bulletin
+                        </a>
+                        <a href="{{ route('admin.resources.create') }}" class="flex items-center px-3 py-2 hover:bg-slate-50 text-slate-700 hover:text-slate-900">
+                            <span class="w-2 h-2 rounded-full bg-indigo-500 mr-2.5"></span>
+                            Upload Study Resource
                         </a>
                     </div>
                 </div>
