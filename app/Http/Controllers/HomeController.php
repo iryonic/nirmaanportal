@@ -43,7 +43,7 @@ class HomeController extends Controller
         $latestNotifications = Notification::published()
             ->orderByDesc('is_pinned')
             ->orderByDesc('published_at')
-            ->take(6)
+            ->take(12)
             ->get();
 
         // Dynamic impact statistics with live database counts and configurable baselines

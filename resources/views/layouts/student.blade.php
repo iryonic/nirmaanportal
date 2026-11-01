@@ -88,6 +88,9 @@
     <!-- PWA Service Worker Registration -->
     @include('partials.pwa-scripts')
 
+    <!-- Unified Custom Modal Dialog Component for Confirm & Alert -->
+    <x-modal-dialog />
+
     @stack('scripts')
 </body>
 </html>

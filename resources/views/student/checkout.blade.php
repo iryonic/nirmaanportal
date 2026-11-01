@@ -159,7 +159,11 @@ function checkoutEngine() {
             .then(data => {
                 if (!data || !data.success) {
                     this.isProcessing = false;
-                    alert('Could not initialize gateway: ' + (data?.message || 'Unknown error'));
+                    window.appAlert({
+                        title: 'Payment Gateway Error',
+                        message: 'Could not initialize gateway: ' + (data?.message || 'Unknown error'),
+                        tone: 'danger'
+                    });
                     return;
                 }
 
@@ -203,7 +207,11 @@ function checkoutEngine() {
 
                     rzp.on('payment.failed', (resp) => {
                         this.isProcessing = false;
-                        alert('Payment could not be completed: ' + (resp.error?.description || 'Gateway error'));
+                        window.appAlert({
+                            title: 'Payment Unsuccessful',
+                            message: 'Payment could not be completed: ' + (resp.error?.description || 'Gateway error'),
+                            tone: 'danger'
+                        });
                     });
 
                     rzp.open();
@@ -221,7 +229,11 @@ function checkoutEngine() {
             })
             .catch(err => {
                 this.isProcessing = false;
-                alert('Checkout Error: ' + err.message);
+                window.appAlert({
+                    title: 'Checkout Error',
+                    message: err.message,
+                    tone: 'danger'
+                });
             });
         }
     };

@@ -231,7 +231,7 @@
             <!-- Form Actions -->
             <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
                 <button type="button" 
-                        onclick="if(confirm('Delete this notification permanently?')) { document.getElementById('delete-form').submit(); }"
+                        onclick="window.appConfirm({ title: 'Delete Notice', message: 'Are you sure you want to delete this notification permanently? This action cannot be reversed.', tone: 'danger', confirmText: 'Delete Permanently' }).then(yes => { if(yes) document.getElementById('delete-form').submit(); })"
                         class="text-xs font-medium text-red-600 hover:text-red-800 transition-colors">
                     &times; Delete Notice
                 </button>

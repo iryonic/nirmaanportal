@@ -138,25 +138,26 @@
         </div>
     </section>
 
-    <!-- 2.5 LATEST NOTIFICATIONS / NOTICE BOARD SECTION -->
+    <!-- 2.5 LATEST NOTIFICATIONS / NOTICE BOARD SECTION (INFINITE VERTICAL MARQUEE) -->
     <section class="py-12 bg-slate-100/60 border-y border-slate-200" id="notifications">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Header Row -->
             <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
                 <div>
                     <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-50 text-blue-950 border border-blue-200/80 text-xs font-bold mb-2">
-                        <span class="w-2 h-2 rounded-full bg-blue-950 animate-pulse"></span>
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                         <span class="uppercase tracking-wider">LIVE NOTICE BOARD</span>
                     </div>
                     <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                         Latest Notices &amp; Exam Alerts
                     </h2>
+                    <p class="text-xs sm:text-sm text-slate-500 mt-1">Real-time official circulars, examination schedules, admit card updates, and defence recruitment rallies.</p>
                 </div>
                 
                 <div class="flex items-center space-x-2 shrink-0">
                     <a href="{{ route('announcements') }}" 
                        class="inline-flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-semibold text-blue-950 bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs transition group">
-                        <span>View All Notifications</span>
+                        <span>View All Notifications (Archive)</span>
                         <svg class="w-4 h-4 transform group-hover:translate-x-0.5 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
                         </svg>
@@ -164,106 +165,208 @@
                 </div>
             </div>
 
-            <!-- Notifications Card Container -->
-            <div class=" max-h-[400px] bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden overflow-y-scroll">
+            <!-- Notifications Marquee Card Container -->
+            <div x-data="{ isPaused: false }" 
+                 :class="{ 'is-paused': isPaused }"
+                 class="relative h-[450px] sm:h-[480px] bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden marquee-container group">
+                
+                <!-- Top & Bottom Gradient Masks for Smooth Dissolve -->
+                <div class="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-white via-white/80 to-transparent z-20"></div>
+                <div class="pointer-events-none absolute inset-x-0 bottom-12 h-16 bg-gradient-to-t from-white via-white/80 to-transparent z-20"></div>
+
+                <!-- Floating Marquee Status / Pause Controller Badge -->
+                <div class="absolute top-3.5 right-4 z-30 flex items-center space-x-2">
+                    <button @click="isPaused = !isPaused" 
+                            type="button"
+                            title="Click to toggle auto-scroll pause/play"
+                            class="px-3 py-1 rounded-full text-[10px] font-semibold tracking-wider uppercase transition-all duration-200 flex items-center space-x-1.5 shadow-2xs backdrop-blur-xs cursor-pointer"
+                            :class="isPaused ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-slate-900/85 hover:bg-slate-950 text-white border border-slate-700/60'">
+                        <span class="w-1.5 h-1.5 rounded-full" :class="isPaused ? 'bg-amber-500' : 'bg-emerald-400 animate-ping'"></span>
+                        <span x-text="isPaused ? 'Paused (Click to Resume)' : 'Live Feed • Hover to Pause'"></span>
+                    </button>
+                </div>
+
                 @if(isset($latestNotifications) && $latestNotifications->count() > 0)
-                    <div class="divide-y divide-slate-100">
-                        @foreach($latestNotifications as $notice)
-                            <article class="p-4 sm:p-5 hover:bg-slate-50/70 transition-colors duration-150 group">
-                                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                                    
-                                    <!-- Left Section: Badges, Title & Meta -->
-                                    <div class="flex-grow space-y-1.5 min-w-0">
-                                        <!-- Top Meta Line: Badges, Category, Date -->
-                                        <div class="flex flex-wrap items-center gap-2">
-                                            <!-- NEW Badge (Active for 72 hours only) -->
-                                            @if($notice->is_new)
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-rose-600 text-white shadow-2xs animate-pulse" title="Published within the last 72 hours">
-                                                    NEW
+                    <!-- Vertical Marquee Scrolling Track (Rendered twice for seamless loop) -->
+                    <div class="marquee-vertical-track flex flex-col divide-y divide-slate-100">
+                        
+                        <!-- Primary Track 1 -->
+                        <div class="divide-y divide-slate-100">
+                            @foreach($latestNotifications as $notice)
+                                <article class="p-4 sm:p-5 hover:bg-blue-50/30 transition-colors duration-150 group/item">
+                                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                                        
+                                        <!-- Left Section: Badges, Title & Meta -->
+                                        <div class="flex-grow space-y-1.5 min-w-0">
+                                            <!-- Top Meta Line: Badges, Category, Date -->
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                @if($notice->is_new)
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-rose-600 text-white shadow-2xs animate-pulse" title="Published within the last 72 hours">
+                                                        NEW
+                                                    </span>
+                                                @endif
+
+                                                @if($notice->is_pinned)
+                                                    <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                                                        <svg class="w-3 h-3 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"></path></svg>
+                                                        <span>PINNED</span>
+                                                    </span>
+                                                @endif
+
+                                                <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-950 border border-blue-100">
+                                                    {{ $notice->category }}
                                                 </span>
-                                            @endif
 
-                                            @if($notice->is_pinned)
-                                                <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
-                                                    <svg class="w-3 h-3 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"></path></svg>
-                                                    <span>PINNED</span>
+                                                <span class="inline-flex items-center space-x-1 text-xs text-slate-500 font-medium">
+                                                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                    </svg>
+                                                    <span>{{ $notice->formatted_date }}</span>
                                                 </span>
+                                            </div>
+
+                                            <!-- Title (Clickable) -->
+                                            <h3 class="text-sm sm:text-base font-bold text-slate-900 group-hover/item:text-blue-950 transition-colors leading-snug break-words">
+                                                <a href="{{ $notice->action_url }}" 
+                                                   @if($notice->opens_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
+                                                   class="focus:outline-none focus:underline">
+                                                    {{ $notice->title }}
+                                                </a>
+                                            </h3>
+
+                                            @if($notice->description)
+                                                <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                                                    {{ $notice->description }}
+                                                </p>
                                             @endif
-
-                                            <!-- Category Badge -->
-                                            <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-950 border border-blue-100">
-                                                {{ $notice->category }}
-                                            </span>
-
-                                            <!-- Publication Date with Calendar Icon -->
-                                            <span class="inline-flex items-center space-x-1 text-xs text-slate-500 font-medium">
-                                                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                                </svg>
-                                                <span>{{ $notice->formatted_date }}</span>
-                                            </span>
                                         </div>
 
-                                        <!-- Title (Clickable) -->
-                                        <h3 class="text-sm sm:text-base font-bold text-slate-900 group-hover:text-blue-950 transition-colors leading-snug break-words">
-                                            <a href="{{ $notice->action_url }}" 
-                                               @if($notice->opens_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
-                                               class="focus:outline-none focus:underline">
-                                                {{ $notice->title }}
-                                            </a>
-                                        </h3>
+                                        <!-- Right Section: Action Indicator -->
+                                        <div class="flex items-center space-x-2 pt-1 lg:pt-0 shrink-0 self-start lg:self-center">
+                                            @if($notice->attachment_path)
+                                                <a href="{{ route('notifications.download', $notice->id) }}" 
+                                                   target="_blank"
+                                                   class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition shadow-2xs">
+                                                    <svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                                                    <span>PDF Notice</span>
+                                                    @if($notice->attachment_size)
+                                                        <span class="text-[10px] text-rose-500">({{ $notice->attachment_size }})</span>
+                                                    @endif
+                                                </a>
+                                            @elseif($notice->external_url)
+                                                <a href="{{ $notice->external_url }}" 
+                                                   @if($notice->opens_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
+                                                   class="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-950 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition shadow-2xs">
+                                                    <span>Visit Portal</span>
+                                                    <svg class="w-3.5 h-3.5 text-blue-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                                </a>
+                                            @else
+                                                <a href="{{ route('announcements', ['q' => $notice->title]) }}" 
+                                                   class="inline-flex items-center space-x-1 text-xs font-semibold text-slate-600 hover:text-blue-950 transition">
+                                                    <span>Details</span>
+                                                    <svg class="w-3.5 h-3.5 transform group-hover/item:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                                </a>
+                                            @endif
+                                        </div>
 
-                                        <!-- Description snippet if present -->
-                                        @if($notice->description)
-                                            <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">
-                                                {{ $notice->description }}
-                                            </p>
-                                        @endif
                                     </div>
+                                </article>
+                            @endforeach
+                        </div>
 
-                                    <!-- Right Section: Action Indicator (PDF download, External link, Arrow) -->
-                                    <div class="flex items-center space-x-2 pt-1 lg:pt-0 shrink-0 self-start lg:self-center">
-                                        @if($notice->attachment_path)
-                                            <a href="{{ route('notifications.download', $notice->id) }}" 
-                                               target="_blank"
-                                               class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition">
-                                                <svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
-                                                <span>PDF Notice</span>
-                                                @if($notice->attachment_size)
-                                                    <span class="text-[10px] text-rose-500">({{ $notice->attachment_size }})</span>
+                        <!-- Duplicate Track 2 (Cloned for seamless infinite vertical scroll) -->
+                        <div class="divide-y divide-slate-100" aria-hidden="true">
+                            @foreach($latestNotifications as $notice)
+                                <article class="p-4 sm:p-5 hover:bg-blue-50/30 transition-colors duration-150 group/item">
+                                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                                        
+                                        <!-- Left Section: Badges, Title & Meta -->
+                                        <div class="flex-grow space-y-1.5 min-w-0">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                @if($notice->is_new)
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-rose-600 text-white shadow-2xs">
+                                                        NEW
+                                                    </span>
                                                 @endif
-                                            </a>
-                                        @elseif($notice->external_url)
-                                            <a href="{{ $notice->external_url }}" 
-                                               @if($notice->opens_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
-                                               class="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-950 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition">
-                                                <span>Visit Portal</span>
-                                                <svg class="w-3.5 h-3.5 text-blue-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                                            </a>
-                                        @else
-                                            <a href="{{ route('announcements', ['q' => $notice->title]) }}" 
-                                               class="inline-flex items-center space-x-1 text-xs font-semibold text-slate-600 hover:text-blue-950 transition">
-                                                <span>Details</span>
-                                                <svg class="w-3.5 h-3.5 transform group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                                            </a>
-                                        @endif
-                                    </div>
 
-                                </div>
-                            </article>
-                        @endforeach
+                                                @if($notice->is_pinned)
+                                                    <span class="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                                                        <svg class="w-3 h-3 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"></path></svg>
+                                                        <span>PINNED</span>
+                                                    </span>
+                                                @endif
+
+                                                <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-950 border border-blue-100">
+                                                    {{ $notice->category }}
+                                                </span>
+
+                                                <span class="inline-flex items-center space-x-1 text-xs text-slate-500 font-medium">
+                                                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                    </svg>
+                                                    <span>{{ $notice->formatted_date }}</span>
+                                                </span>
+                                            </div>
+
+                                            <h3 class="text-sm sm:text-base font-bold text-slate-900 group-hover/item:text-blue-950 transition-colors leading-snug break-words">
+                                                <a href="{{ $notice->action_url }}" 
+                                                   @if($notice->opens_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
+                                                   tabindex="-1"
+                                                   class="focus:outline-none focus:underline">
+                                                    {{ $notice->title }}
+                                                </a>
+                                            </h3>
+
+                                            @if($notice->description)
+                                                <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                                                    {{ $notice->description }}
+                                                </p>
+                                            @endif
+                                        </div>
+
+                                        <div class="flex items-center space-x-2 pt-1 lg:pt-0 shrink-0 self-start lg:self-center">
+                                            @if($notice->attachment_path)
+                                                <a href="{{ route('notifications.download', $notice->id) }}" 
+                                                   target="_blank"
+                                                   tabindex="-1"
+                                                   class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition shadow-2xs">
+                                                    <svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                                                    <span>PDF Notice</span>
+                                                </a>
+                                            @elseif($notice->external_url)
+                                                <a href="{{ $notice->external_url }}" 
+                                                   @if($notice->opens_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
+                                                   tabindex="-1"
+                                                   class="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-950 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition shadow-2xs">
+                                                    <span>Visit Portal</span>
+                                                    <svg class="w-3.5 h-3.5 text-blue-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                                </a>
+                                            @endif
+                                        </div>
+
+                                    </div>
+                                </article>
+                            @endforeach
+                        </div>
+
                     </div>
 
-                    <!-- Footer of the notices card with link to dedicated announcements -->
-                    <div class="p-3.5 bg-slate-50/70 border-t border-slate-100 text-center">
-                        <a href="{{ route('announcements') }}" class="text-xs font-semibold text-blue-950 hover:underline transition inline-flex items-center space-x-1.5">
-                            <span>View all active recruitments &amp; announcements in repository</span>
+                    <!-- Pinned Bottom Bar -->
+                    <div class="absolute inset-x-0 bottom-0 p-3 bg-slate-50/95 border-t border-slate-200/90 text-center flex flex-col sm:flex-row items-center justify-between px-5 text-xs z-30 backdrop-blur-xs">
+                        <span class="text-slate-500 font-medium text-[11px]">
+                            Showing {{ $latestNotifications->count() }} live defense announcements &bull; Continuous real-time stream
+                        </span>
+                        <a href="{{ route('announcements') }}" class="font-bold text-blue-950 hover:underline transition inline-flex items-center space-x-1 mt-1 sm:mt-0 text-[11px]">
+                            <span>Search &amp; Filter Full Notice Archive</span>
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
                         </a>
                     </div>
                 @else
                     <!-- Fallback empty state -->
-                    <div class="py-12 text-center px-4">
+                    <div class="py-16 text-center px-4">
+                        <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                        </div>
                         <p class="text-xs text-slate-500 font-medium">No live announcements posted at the moment. Please check back shortly.</p>
                     </div>
                 @endif

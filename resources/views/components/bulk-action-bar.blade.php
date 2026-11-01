@@ -195,14 +195,37 @@
                     }
                 },
 
-                executeBulkAction(actionName, targetUrl, confirmMsg) {
+                async executeBulkAction(actionName, targetUrl, confirmMsg) {
                     if (this.selected.length === 0) {
-                        alert('Please select at least one item.');
+                        if (typeof window.appAlert === 'function') {
+                            await window.appAlert({
+                                title: 'Selection Required',
+                                message: 'Please select at least one item using the checkboxes to perform this action.',
+                                tone: 'warning',
+                                confirmText: 'Understood'
+                            });
+                        } else {
+                            alert('Please select at least one item.');
+                        }
                         return;
                     }
 
-                    if (confirmMsg && !confirm(confirmMsg)) {
-                        return;
+                    if (confirmMsg) {
+                        let confirmed = false;
+                        if (typeof window.appConfirm === 'function') {
+                            confirmed = await window.appConfirm({
+                                title: 'Confirm Bulk Action',
+                                message: confirmMsg,
+                                tone: actionName === 'delete' ? 'danger' : 'warning',
+                                confirmText: actionName === 'delete' ? 'Delete Selected' : 'Proceed'
+                            });
+                        } else {
+                            confirmed = confirm(confirmMsg);
+                        }
+
+                        if (!confirmed) {
+                            return;
+                        }
                     }
 
                     this.bulkActionName = actionName;

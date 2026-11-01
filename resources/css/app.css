@@ -52,3 +52,32 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #94A3B8;
 }
+
+/* Infinite Vertical Marquee Animation for Notice Board */
+@keyframes marquee-vertical {
+  0% {
+    transform: translateY(0%);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+.marquee-vertical-track {
+  animation: marquee-vertical 36s linear infinite;
+  will-change: transform;
+  transition: none !important;
+}
+
+.marquee-container:hover .marquee-vertical-track,
+.marquee-container.is-paused .marquee-vertical-track {
+  animation-play-state: paused !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-vertical-track {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
