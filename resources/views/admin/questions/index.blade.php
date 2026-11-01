@@ -4,7 +4,7 @@
 @section('header_title', 'Question Bank')
 
 @section('content')
-<div class="space-y-5">
+<div class="space-y-5" x-data="bulkActionManager({ allIds: {{ json_encode($questions->pluck('id')) }}, actionUrl: '{{ route('admin.questions.bulk') }}' })">
     
     <!-- Action Bar & Page Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white rounded-xl p-4 sm:p-5 border border-slate-200/80 shadow-2xs">
@@ -79,6 +79,9 @@
             <table class="w-full text-left text-xs text-slate-600">
                 <thead class="bg-slate-50/75 text-slate-500 uppercase text-[10px] font-semibold tracking-wider border-b border-slate-200/80">
                     <tr>
+                        <th class="w-10 px-3 py-2.5 text-center">
+                            <input type="checkbox" @change="toggleSelectAll()" :checked="isAllSelected()" class="w-4 h-4 rounded text-blue-950 border-slate-300 focus:ring-blue-950/20 cursor-pointer">
+                        </th>
                         <th class="px-4 py-2.5 whitespace-nowrap">Subject &amp; Topic</th>
                         <th class="px-4 py-2.5 whitespace-nowrap">Question Prompt</th>
                         <th class="px-4 py-2.5 whitespace-nowrap">Answer Key</th>
@@ -89,7 +92,12 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse($questions as $q)
-                        <tr class="hover:bg-slate-50/70 transition-colors">
+                        <tr class="hover:bg-slate-50/70 transition-colors" :class="selected.includes({{ $q->id }}) ? 'bg-blue-50/30' : ''">
+                            <!-- Row Selection Checkbox -->
+                            <td class="w-10 px-3 py-3 text-center">
+                                <input type="checkbox" :value="{{ $q->id }}" x-model="selected" class="w-4 h-4 rounded text-blue-950 border-slate-300 focus:ring-blue-950/20 cursor-pointer">
+                            </td>
+
                             <!-- Subject & Topic -->
                             <td class="px-4 py-3 whitespace-nowrap font-medium">
                                 <span class="px-2 py-0.5 rounded-md text-[10px] font-medium bg-blue-50 text-blue-950 border border-blue-200/60 inline-block">
@@ -151,7 +159,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="py-12 text-center text-xs text-slate-400">
+                            <td colspan="7" class="py-12 text-center text-xs text-slate-400">
                                 <svg class="w-8 h-8 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                 No questions found in the repository matching your query.
                             </td>
@@ -168,5 +176,12 @@
         @endif
     </div>
 
+    <!-- Reusable Bulk Action Bar Component -->
+    <x-bulk-action-bar 
+        :action-url="route('admin.questions.bulk')"
+        item-name="Question" 
+        item-name-plural="Questions" />
+
 </div>
 @endsection
+

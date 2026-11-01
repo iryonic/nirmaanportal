@@ -81,4 +81,52 @@ class StudentManagementController extends Controller
 
         return back()->with('success', 'Student manually enrolled in course.');
     }
+
+    public function bulk(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer', 'exists:users,id'],
+            'action' => ['required', 'string', 'in:activate,suspend,export'],
+        ]);
+
+        $ids = $validated['ids'];
+        $count = count($ids);
+
+        switch ($validated['action']) {
+            case 'activate':
+                User::where('role', 'student')->whereIn('id', $ids)->update(['is_active' => true]);
+                return back()->with('success', "{$count} cadet accounts activated successfully.");
+
+            case 'suspend':
+                User::where('role', 'student')->whereIn('id', $ids)->update(['is_active' => false]);
+                return back()->with('success', "{$count} cadet accounts suspended.");
+
+            case 'export':
+                $students = User::where('role', 'student')->whereIn('id', $ids)->get();
+                $filename = 'cadets_export_' . now()->format('Ymd_His') . '.csv';
+
+                return response()->streamDownload(function () use ($students) {
+                    $handle = fopen('php://output', 'w');
+                    fputcsv($handle, ['ID', 'Name', 'Email', 'Phone', 'Target Exam', 'Status', 'Registered Date']);
+
+                    foreach ($students as $st) {
+                        fputcsv($handle, [
+                            $st->id,
+                            $st->name,
+                            $st->email,
+                            $st->phone ?? 'N/A',
+                            $st->target_exam ?? 'N/A',
+                            $st->is_active ? 'Active' : 'Suspended',
+                            $st->created_at->format('Y-m-d H:i:s'),
+                        ]);
+                    }
+                    fclose($handle);
+                }, $filename, ['Content-Type' => 'text/csv']);
+
+            default:
+                return back()->with('error', 'Unknown bulk action.');
+        }
+    }
 }
+

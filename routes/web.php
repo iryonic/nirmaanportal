@@ -131,6 +131,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/resources/{resource}/download', [ResourceManagementController::class, 'download'])->name('resources.download');
 
     // Question Bank Management
+    Route::post('/questions/bulk', [QuestionManagementController::class, 'bulk'])->name('questions.bulk');
     Route::resource('questions', QuestionManagementController::class);
 
     // Mock Test Management
@@ -139,6 +140,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/tests/{test}/attempts', [MockTestManagementController::class, 'attempts'])->name('tests.attempts');
 
     // Student Management
+    Route::post('/students/bulk', [StudentManagementController::class, 'bulk'])->name('students.bulk');
     Route::get('/students', [StudentManagementController::class, 'index'])->name('students.index');
     Route::get('/students/{student}', [StudentManagementController::class, 'show'])->name('students.show');
     Route::post('/students/{student}/toggle', [StudentManagementController::class, 'toggleStatus'])->name('students.toggle');

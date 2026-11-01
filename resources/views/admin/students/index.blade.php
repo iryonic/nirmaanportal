@@ -4,7 +4,7 @@
 @section('header_title', 'Students ')
 
 @section('content')
-<div class="space-y-5">
+<div class="space-y-5" x-data="bulkActionManager({ allIds: {{ json_encode($students->pluck('id')) }}, actionUrl: '{{ route('admin.students.bulk') }}' })">
     
     <!-- Action Bar & Page Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white rounded-xl p-4 sm:p-5 border border-slate-200/80 shadow-2xs">
@@ -81,6 +81,9 @@
             <table class="w-full text-left text-xs text-slate-600">
                 <thead class="bg-slate-50/75 text-slate-500 uppercase text-[10px] font-semibold tracking-wider border-b border-slate-200/80">
                     <tr>
+                        <th class="w-10 px-3 py-2.5 text-center">
+                            <input type="checkbox" @change="toggleSelectAll()" :checked="isAllSelected()" class="w-4 h-4 rounded text-blue-950 border-slate-300 focus:ring-blue-950/20 cursor-pointer">
+                        </th>
                         <th class="px-4 py-2.5 whitespace-nowrap">Cadet Profile</th>
                         <th class="px-4 py-2.5 whitespace-nowrap">Contact Information</th>
                         <th class="px-4 py-2.5 whitespace-nowrap">Target Service</th>
@@ -93,7 +96,12 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse($students as $st)
-                        <tr class="hover:bg-slate-50/70 transition-colors">
+                        <tr class="hover:bg-slate-50/70 transition-colors" :class="selected.includes({{ $st->id }}) ? 'bg-blue-50/30' : ''">
+                            <!-- Row Selection Checkbox -->
+                            <td class="w-10 px-3 py-3 text-center">
+                                <input type="checkbox" :value="{{ $st->id }}" x-model="selected" class="w-4 h-4 rounded text-blue-950 border-slate-300 focus:ring-blue-950/20 cursor-pointer">
+                            </td>
+
                             <!-- Cadet Profile -->
                             <td class="px-4 py-3 whitespace-nowrap font-medium text-slate-900">
                                 <div class="flex items-center space-x-2.5">
@@ -164,7 +172,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="py-12 text-center text-xs text-slate-400">
+                            <td colspan="9" class="py-12 text-center text-xs text-slate-400">
                                 <svg class="w-8 h-8 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                                 No cadets found matching your search.
                             </td>
@@ -181,5 +189,17 @@
         @endif
     </div>
 
+    <!-- Reusable Bulk Action Bar Component -->
+    <x-bulk-action-bar 
+        :action-url="route('admin.students.bulk')"
+        item-name="Cadet" 
+        item-name-plural="Cadets"
+        :actions="[
+            ['name' => 'activate', 'label' => 'Activate Accounts', 'icon' => 'check', 'style' => 'success'],
+            ['name' => 'suspend', 'label' => 'Suspend Accounts', 'icon' => 'pause', 'style' => 'warning', 'confirm' => 'Suspend selected cadet accounts? They will not be able to log in.'],
+            ['name' => 'export', 'label' => 'Export CSV', 'icon' => 'download', 'style' => 'secondary']
+        ]" />
+
 </div>
 @endsection
+

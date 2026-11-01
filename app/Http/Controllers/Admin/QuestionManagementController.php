@@ -105,4 +105,62 @@ class QuestionManagementController extends Controller
         $question->delete();
         return back()->with('success', 'Question deleted.');
     }
+
+    public function bulk(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer', 'exists:questions,id'],
+            'action' => ['required', 'string', 'in:delete,activate,deactivate,export'],
+        ]);
+
+        $ids = $validated['ids'];
+        $count = count($ids);
+
+        switch ($validated['action']) {
+            case 'delete':
+                Question::whereIn('id', $ids)->delete();
+                return back()->with('success', "{$count} questions were deleted successfully.");
+
+            case 'activate':
+                Question::whereIn('id', $ids)->update(['is_active' => true]);
+                return back()->with('success', "{$count} questions were marked active.");
+
+            case 'deactivate':
+                Question::whereIn('id', $ids)->update(['is_active' => false]);
+                return back()->with('success', "{$count} questions were deactivated.");
+
+            case 'export':
+                $questions = Question::whereIn('id', $ids)->get();
+                $filename = 'questions_export_' . now()->format('Ymd_His') . '.csv';
+
+                return response()->streamDownload(function () use ($questions) {
+                    $handle = fopen('php://output', 'w');
+                    fputcsv($handle, ['ID', 'Subject', 'Topic', 'Difficulty', 'Question Text', 'Option A', 'Option B', 'Option C', 'Option D', 'Correct Option', 'Marks', 'Negative Marks', 'Status']);
+
+                    foreach ($questions as $q) {
+                        fputcsv($handle, [
+                            $q->id,
+                            $q->subject,
+                            $q->topic,
+                            $q->difficulty,
+                            $q->question_text,
+                            $q->option_a,
+                            $q->option_b,
+                            $q->option_c,
+                            $q->option_d,
+                            $q->correct_option,
+                            $q->marks,
+                            $q->negative_marks,
+                            $q->is_active ? 'Active' : 'Inactive',
+                        ]);
+                    }
+                    fclose($handle);
+                }, $filename, ['Content-Type' => 'text/csv']);
+
+            default:
+                return back()->with('error', 'Unknown bulk action.');
+        }
+    }
 }
+

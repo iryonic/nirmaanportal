@@ -67,9 +67,7 @@
                             </div>
                             <div class="text-left hidden sm:block pr-1">
                                 <span class="text-xs font-semibold text-slate-900 block truncate max-w-[110px] leading-tight">{{ Auth::user()->name }}</span>
-                                <span class="text-[9px] font-bold uppercase tracking-tight {{ Auth::user()->isAdmin() ? 'text-slate-500' : 'text-blue-900' }}">
-                                    {{ Auth::user()->isAdmin() ? 'Officer' : 'Cadet' }}
-                                </span>
+                               
                             </div>
                             <svg class="w-3.5 h-3.5 text-slate-400 pr-1 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </button>
@@ -90,7 +88,7 @@
                                 <p class="text-[11px] text-slate-500 font-mono truncate">{{ Auth::user()->email }}</p>
                                 <div class="mt-1">
                                     <span class="px-2 py-0.5 rounded text-[9px] font-semibold uppercase {{ Auth::user()->isAdmin() ? 'bg-slate-900 text-white' : 'bg-blue-50 text-blue-900 border border-blue-200' }}">
-                                        {{ Auth::user()->isAdmin() ? 'Command Officer' : (Auth::user()->target_exam ?? 'Cadet') }}
+                                        {{ Auth::user()->isAdmin() ? 'Admin' : (Auth::user()->target_exam ?? 'Student') }}
                                     </span>
                                 </div>
                             </div>
