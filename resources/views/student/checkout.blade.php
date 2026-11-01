@@ -132,14 +132,21 @@ function checkoutEngine() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
                 body: JSON.stringify({
                     code: code,
-                    base_price: this.basePrice
+                    base_price: this.basePrice,
+                    item_id: {{ $item->id }},
+                    type: '{{ $type }}'
                 })
             })
-            .then(res => res.json().then(data => ({ status: res.status, body: data })))
+            .then(async res => {
+                const isJson = (res.headers.get('content-type') || '').includes('application/json');
+                const data = isJson ? await res.json() : {};
+                return { status: res.status, body: data };
+            })
             .then(({ status, body }) => {
                 this.couponLoading = false;
                 if (status === 200 && body.valid) {
@@ -174,26 +181,36 @@ function checkoutEngine() {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
                     body: JSON.stringify({
-                        item_id: {{ $item->id }},
+                        type: '{{ $type }}',
                         item_type: '{{ $type }}',
+                        item_id: {{ $item->id }},
                         amount: this.finalPayable,
                         coupon_code: this.appliedCoupon ? this.appliedCoupon.code : null
                     })
                 })
-                .then(res => res.json())
+                .then(async res => {
+                    const isJson = (res.headers.get('content-type') || '').includes('application/json');
+                    const data = isJson ? await res.json() : null;
+                    if (!res.ok) {
+                        const errMsg = (data && (data.message || data.error)) || ('Server returned HTTP ' + res.status);
+                        throw new Error(errMsg);
+                    }
+                    return data;
+                })
                 .then(data => {
-                    if (!data.success) {
+                    if (!data || !data.success) {
                         this.isProcessing = false;
-                        alert('Could not initialize gateway: ' + (data.message || 'Unknown error'));
+                        alert('Could not initialize gateway: ' + (data?.message || 'Unknown error'));
                         return;
                     }
 
                     this.razorpayOrderId = data.order_id;
 
-                    if (this.razorpayConfig.has_keys && !data.simulation) {
+                    if (this.razorpayConfig.has_keys && !data.simulation && !data.is_simulated) {
                         this.isProcessing = false;
 
                         const rzp = new Razorpay({
@@ -249,7 +266,7 @@ function checkoutEngine() {
                 })
                 .catch(err => {
                     this.isProcessing = false;
-                    alert('Network error: ' + err.message);
+                    alert('Checkout Error: ' + err.message);
                 });
 
                 return;

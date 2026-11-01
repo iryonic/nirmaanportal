@@ -139,6 +139,22 @@ class RazorpayPaymentTest extends TestCase
         $this->assertEquals(399900, $response->json('amount'));
     }
 
+    public function test_student_can_create_razorpay_order_with_item_type_parameter(): void
+    {
+        SiteSetting::set('razorpay_fallback_simulation', '1');
+
+        $response = $this->actingAs($this->student)->postJson(route('student.checkout.create-razorpay-order'), [
+            'item_type' => 'course',
+            'item_id' => $this->course->id,
+            'coupon_code' => '',
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertTrue($response->json('success'));
+        $this->assertEquals(399900, $response->json('amount'));
+    }
+
+
     public function test_student_can_complete_payment_with_valid_signature_and_enroll(): void
     {
         SiteSetting::set('razorpay_mode', 'test');

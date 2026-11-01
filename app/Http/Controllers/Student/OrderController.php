@@ -247,14 +247,19 @@ class OrderController extends Controller
      */
     public function createRazorpayOrder(Request $request, \App\Services\RazorpayService $razorpayService)
     {
+        if (!$request->has('type') && $request->has('item_type')) {
+            $request->merge(['type' => $request->input('item_type')]);
+        }
+
         $request->validate([
-            'type' => ['required', 'string', 'in:course,test'],
+            'type' => ['nullable', 'string', 'in:course,test'],
+            'item_type' => ['nullable', 'string', 'in:course,test'],
             'item_id' => ['required', 'integer'],
             'coupon_code' => ['nullable', 'string', 'max:30'],
         ]);
 
-        $type = $request->input('type');
-        $itemId = $request->input('item_id');
+        $type = $request->input('type') ?: $request->input('item_type', 'course');
+        $itemId = (int) $request->input('item_id');
         $couponCode = $request->input('coupon_code', '');
 
         $title = '';
