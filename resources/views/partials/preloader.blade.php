@@ -115,38 +115,47 @@
     }
 
     .nirmaan-loader-brand {
-        margin-top: 16px !important;
+        margin-top: 18px !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
         text-align: center !important;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+        -webkit-font-smoothing: antialiased !important;
+        -moz-osx-font-smoothing: grayscale !important;
+        text-rendering: optimizeLegibility !important;
     }
 
     .nirmaan-loader-brand-title {
-        font-size: 13px !important;
+        font-family: inherit !important;
+        font-size: 18px !important;
         font-weight: 800 !important;
-        letter-spacing: 0.3em !important;
-        color: #172554 !important;
+        letter-spacing: 0.22em !important;
+        color: #0f172a !important;
         text-transform: uppercase !important;
         line-height: 1.2 !important;
+        -webkit-font-smoothing: antialiased !important;
+        -moz-osx-font-smoothing: grayscale !important;
     }
 
     .nirmaan-loader-brand-subtitle {
-        font-size: 10px !important;
-        font-weight: 600 !important;
-        letter-spacing: 0.25em !important;
-        color: #94a3b8 !important;
+        font-family: inherit !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.18em !important;
+        color: #475569 !important;
         text-transform: uppercase !important;
         margin-top: 6px !important;
         display: inline-flex !important;
         align-items: center !important;
         gap: 6px !important;
+        -webkit-font-smoothing: antialiased !important;
+        -moz-osx-font-smoothing: grayscale !important;
     }
 
     .nirmaan-loader-dot-pulse {
-        width: 5px !important;
-        height: 5px !important;
+        width: 6px !important;
+        height: 6px !important;
         border-radius: 50% !important;
         background-color: #f59e0b !important;
         animation: nirmaanPulseDot 1.4s ease-in-out infinite !important;
@@ -167,9 +176,9 @@
             <span class="nirmaan-lens-loader"></span>
         </div>
 
-        <div class="nirmaan-loader-brand">
-            <span class="nirmaan-loader-brand-title">NIRMAAN</span>
-            <span class="nirmaan-loader-brand-subtitle">
+        <div class="nirmaan-loader-brand" style="font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important; -webkit-font-smoothing: antialiased !important;">
+            <span class="nirmaan-loader-brand-title" style="font-size: 18px !important; font-weight: 800 !important; letter-spacing: 0.22em !important; color: #0f172a !important; line-height: 1.2 !important; -webkit-font-smoothing: antialiased !important;">NIRMAAN</span>
+            <span class="nirmaan-loader-brand-subtitle" style="font-size: 11px !important; font-weight: 700 !important; letter-spacing: 0.18em !important; color: #475569 !important; -webkit-font-smoothing: antialiased !important;">
                 <span class="nirmaan-loader-dot-pulse"></span>
                 <span>Loading</span>
             </span>
