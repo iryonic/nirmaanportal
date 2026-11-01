@@ -1,6 +1,6 @@
 @extends('layouts.student')
 
-@section('title', 'Industry Payment Gateway — ' . $item->title)
+@section('title', 'Secure Checkout — ' . $item->title)
 
 @section('content')
 @php
@@ -22,15 +22,13 @@
     ]);
     $paymentConfigJson = json_encode($paymentConfig);
 
-    // Initial selected method
+    // Initial selected method: default to razorpay if enabled, else upi, else bank, else mock
     $defaultMethod = 'razorpay';
     if (!($paymentConfig['razorpay']['enabled'] ?? true)) {
         if ($paymentConfig['upi']['enabled'] ?? true) {
             $defaultMethod = 'upi';
         } elseif ($paymentConfig['bank']['enabled'] ?? true) {
             $defaultMethod = 'bank';
-        } elseif ($paymentConfig['methods']['card'] ?? true) {
-            $defaultMethod = 'card';
         } else {
             $defaultMethod = 'mock';
         }
@@ -53,7 +51,6 @@ function checkoutEngine() {
         razorpayPaymentId: '',
         razorpayOrderId: '',
         razorpaySignature: '',
-        razorpayError: '',
         
         // Coupon state
         couponInput: '',
@@ -62,40 +59,17 @@ function checkoutEngine() {
         couponSuccess: '',
         appliedCoupon: null,
         
-        // UPI state
+        // UPI & Bank state
         vpaInput: '{{ $user->email ? explode('@', $user->email)[0] . '@okhdfcbank' : 'cadet@upi' }}',
-        vpaVerified: false,
-        vpaVerifying: false,
         copiedVpa: false,
-        countdown: 899,
-
-        // Bank Transfer state
         bankUtr: '',
         copiedBankField: null,
         
-        // Card state
-        card: {
-            number: '',
-            formattedNumber: '',
-            name: '{{ strtoupper($user->name) }}',
-            expiry: '',
-            cvv: '',
-            brand: 'rupay'
-        },
-        saveCard: true,
-        
-        // Netbanking state
-        selectedBank: 'SBI',
-        
-        // EMI state
-        emiTenure: 3,
-        
-        // Processing modal
+        // Processing modal state
         isProcessing: false,
-        processingMessage: 'Initiating bank handshake...',
-        processingProgress: 25,
+        processingMessage: 'Processing secure payment...',
         
-        // Computed helpers
+        // Computed
         get finalPayable() {
             if (this.appliedCoupon) {
                 return this.appliedCoupon.final_amount;
@@ -110,12 +84,6 @@ function checkoutEngine() {
             }
             return savings;
         },
-        
-        get formattedCountdown() {
-            let m = Math.floor(this.countdown / 60);
-            let s = this.countdown % 60;
-            return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
-        },
 
         get upiQrUrl() {
             if (this.paymentConfig?.upi?.qr_image_url) {
@@ -124,19 +92,9 @@ function checkoutEngine() {
             let vpa = this.paymentConfig?.upi?.vpa || 'nirmaanacademy@icici';
             let name = encodeURIComponent(this.paymentConfig?.upi?.merchant_name || 'Nirmaan Defence Academy');
             let amt = this.finalPayable.toFixed(2);
-            return 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' + encodeURIComponent('upi://pay?pa=' + vpa + '&pn=' + name + '&am=' + amt + '&cu=INR&tn=NIRMAAN-ACC');
+            return 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent('upi://pay?pa=' + vpa + '&pn=' + name + '&am=' + amt + '&cu=INR&tn=NIRMAAN-CADET');
         },
-        
-        // Timer lifecycle
-        init() {
-            setInterval(() => {
-                if (this.countdown > 0) {
-                    this.countdown--;
-                }
-            }, 1000);
-        },
-        
-        // Copy UPI ID
+
         copyVpa() {
             let vpa = this.paymentConfig?.upi?.vpa || 'nirmaanacademy@icici';
             if (navigator.clipboard) {
@@ -146,7 +104,6 @@ function checkoutEngine() {
             setTimeout(() => { this.copiedVpa = false; }, 2500);
         },
 
-        // Copy Bank Transfer Field
         copyBankField(value, fieldKey) {
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(value);
@@ -155,62 +112,12 @@ function checkoutEngine() {
             setTimeout(() => { this.copiedBankField = null; }, 2500);
         },
         
-        // Verify VPA
-        verifyVpa() {
-            if (!this.vpaInput || !this.vpaInput.includes('@')) {
-                alert('Please enter a valid UPI ID (e.g., username@upi)');
-                return;
-            }
-            this.vpaVerifying = true;
-            setTimeout(() => {
-                this.vpaVerifying = false;
-                this.vpaVerified = true;
-            }, 750);
-        },
-        
-        // Format Card Number
-        onCardInput(e) {
-            let raw = e.target.value.replace(/\D/g, '').substring(0, 16);
-            this.card.number = raw;
-            let parts = raw.match(/.{1,4}/g);
-            this.card.formattedNumber = parts ? parts.join(' ') : raw;
-            
-            // Detect Brand
-            if (/^4/.test(raw)) {
-                this.card.brand = 'visa';
-            } else if (/^(5[1-5]|2[2-7])/.test(raw)) {
-                this.card.brand = 'mastercard';
-            } else if (/^(60|65|81|82)/.test(raw)) {
-                this.card.brand = 'rupay';
-            } else if (/^3[47]/.test(raw)) {
-                this.card.brand = 'amex';
-            } else {
-                this.card.brand = 'rupay';
-            }
-        },
-        
-        // Format Expiry
-        onExpiryInput(e) {
-            let raw = e.target.value.replace(/\D/g, '').substring(0, 4);
-            if (raw.length >= 2) {
-                this.card.expiry = raw.substring(0, 2) + '/' + raw.substring(2);
-            } else {
-                this.card.expiry = raw;
-            }
-        },
-        
-        // Format CVV
-        onCvvInput(e) {
-            this.card.cvv = e.target.value.replace(/\D/g, '').substring(0, 4);
-        },
-        
-        // Apply Coupon
         applyCoupon(directCode = null) {
             let code = directCode || this.couponInput;
             code = (code || '').trim().toUpperCase();
             
             if (!code) {
-                this.couponError = 'Please enter a coupon or scholarship code.';
+                this.couponError = 'Please enter a coupon code.';
                 this.couponSuccess = '';
                 return;
             }
@@ -249,7 +156,6 @@ function checkoutEngine() {
             });
         },
         
-        // Remove Coupon
         removeCoupon() {
             this.appliedCoupon = null;
             this.couponInput = '';
@@ -257,12 +163,10 @@ function checkoutEngine() {
             this.couponError = '';
         },
         
-        // Handle Submit & Razorpay Trigger
         submitPayment() {
             if (this.method === 'razorpay') {
                 this.isProcessing = true;
-                this.processingMessage = 'Initializing secure Razorpay order...';
-                this.processingProgress = 30;
+                this.processingMessage = 'Opening secure payment gateway...';
 
                 fetch('{{ route('student.checkout.create-razorpay-order', [], false) }}', {
                     method: 'POST',
@@ -281,7 +185,7 @@ function checkoutEngine() {
                 .then(data => {
                     if (!data.success) {
                         this.isProcessing = false;
-                        alert('Could not initialize gateway order: ' + (data.message || 'Unknown error'));
+                        alert('Could not initialize gateway: ' + (data.message || 'Unknown error'));
                         return;
                     }
 
@@ -307,15 +211,14 @@ function checkoutEngine() {
                             },
                             handler: (response) => {
                                 this.isProcessing = true;
-                                this.processingMessage = 'Capturing digital receipt & verifying signature...';
-                                this.processingProgress = 85;
+                                this.processingMessage = 'Payment successful! Unlocking your access...';
                                 
                                 this.razorpayPaymentId = response.razorpay_payment_id;
                                 this.razorpaySignature = response.razorpay_signature;
 
                                 setTimeout(() => {
                                     document.getElementById('checkout-form').submit();
-                                }, 600);
+                                }, 500);
                             },
                             modal: {
                                 ondismiss: () => {
@@ -331,916 +234,409 @@ function checkoutEngine() {
 
                         rzp.open();
                     } else {
-                        // Safe Sandbox / Fallback mode
-                        this.processingMessage = 'Running Razorpay Sandbox handshake...';
-                        this.processingProgress = 65;
+                        // Sandbox Fallback
+                        this.processingMessage = 'Confirming enrollment in sandbox mode...';
                         setTimeout(() => {
                             this.razorpayPaymentId = 'pay_sim_' + Math.random().toString(36).substring(2, 14);
                             this.razorpaySignature = 'sig_sim_' + Math.random().toString(36).substring(2, 20);
-                            this.processingMessage = 'Payment verified! Finalizing cadet enrollment...';
-                            this.processingProgress = 100;
                             setTimeout(() => {
                                 document.getElementById('checkout-form').submit();
-                            }, 500);
-                        }, 900);
+                            }, 400);
+                        }, 800);
                     }
                 })
                 .catch(err => {
                     this.isProcessing = false;
-                    alert('Network error communicating with payment engine: ' + err.message);
+                    alert('Network error: ' + err.message);
                 });
 
                 return;
             }
 
-            // Non-Razorpay methods
+            // Direct UPI, Bank Wire, or Mock
             this.isProcessing = true;
-            if (this.method === 'bank') {
-                this.processingMessage = 'Recording Bank Transfer UTR & generating provisional slip...';
-            } else if (this.method === 'offline') {
-                this.processingMessage = 'Reserving your academy seat & preparing desk token...';
-            } else {
-                this.processingMessage = 'Connecting to NPCI & RBI Payment Switch...';
-            }
-            this.processingProgress = 35;
-            
-            setTimeout(() => {
-                this.processingMessage = 'Verifying security signature & 3D Secure...';
-                this.processingProgress = 70;
-            }, 600);
-            
-            setTimeout(() => {
-                this.processingMessage = 'Payment Authorized! Finalizing your enrollment...';
-                this.processingProgress = 100;
-            }, 1200);
+            this.processingMessage = this.method === 'bank' 
+                ? 'Recording bank transfer & activating access...' 
+                : (this.method === 'offline' ? 'Reserving admissions desk seat...' : 'Verifying and unlocking access...');
             
             setTimeout(() => {
                 document.getElementById('checkout-form').submit();
-            }, 1600);
+            }, 1000);
         }
     };
 }
 </script>
 
-<div class="py-8 sm:py-12 bg-gray-50 min-h-screen" x-data="checkoutEngine()">
+<div class="py-6 sm:py-10 bg-slate-50/70 min-h-screen text-slate-900" x-data="checkoutEngine()">
 
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6">
         
-        <!-- Header Breadcrumb & Status -->
-        <div class="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <!-- Simplified Header -->
+        <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
             <div>
-                <div class="flex items-center space-x-2 text-xs text-gray-500 mb-1.5">
-                    <a href="{{ route('courses.index') }}" class="hover:text-blue-700 transition">Academy Portal</a>
+                <div class="flex items-center space-x-1.5 text-xs text-slate-500 mb-1">
+                    <a href="{{ route('courses.index') }}" class="hover:text-blue-950 font-medium">Courses</a>
                     <span>/</span>
-                    <span class="text-blue-700 font-semibold">{{ $type === 'course' ? 'Batch Enrollment' : 'CBT Test Series' }}</span>
-                    <span>/</span>
-                    <span class="text-gray-900 font-medium">Secure Checkout</span>
+                    <span class="text-slate-900 font-semibold">Checkout</span>
                 </div>
-                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Payment Gateway &amp; Access Activation</h1>
-                <p class="text-xs text-gray-500 mt-1">Direct instant enrollment with digital tax invoice and zero gateway processing surcharge.</p>
+                <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Complete Your Enrollment</h1>
             </div>
 
-            <!-- Security Assurance Badges -->
-            <div class="flex items-center space-x-2 text-[11px] text-gray-600 bg-white border border-gray-200 px-3.5 py-2 rounded-xl shadow-2xs self-start sm:self-auto">
-                <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span class="font-medium">256-bit SSL</span>
-                <span class="text-gray-300">•</span>
-                <span class="font-medium">RBI Tokenized</span>
-                <span class="text-gray-300">•</span>
-                <span class="font-medium">NPCI Verified</span>
+            <!-- Trust Badge -->
+            <div class="flex items-center space-x-2 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg shrink-0 self-start sm:self-auto">
+                <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                <span>256-Bit SSL • Instant Access Guaranteed</span>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-            
-            <!-- Left Column: Payment Methods & Tabs -->
-            <div class="lg:col-span-7 space-y-6">
+        <form action="{{ $formAction }}" method="POST" id="checkout-form" @submit.prevent="submitPayment()">
+            @csrf
+
+            <!-- Hidden Fields for Controller Verification -->
+            <input type="hidden" name="payment_method" :value="method">
+            <input type="hidden" name="coupon_code" :value="appliedCoupon ? appliedCoupon.code : ''">
+            <input type="hidden" name="payment_reference" :value="razorpayPaymentId || bankUtr || ('pay_' + Math.random().toString(36).substring(2, 10))">
+            <input type="hidden" name="razorpay_payment_id" :value="razorpayPaymentId">
+            <input type="hidden" name="razorpay_order_id" :value="razorpayOrderId">
+            <input type="hidden" name="razorpay_signature" :value="razorpaySignature">
+            <input type="hidden" name="method_meta" :value="method === 'razorpay' ? 'Razorpay Secure Gateway' : (method === 'upi' ? (vpaInput || paymentConfig.upi.vpa) : (method === 'bank' ? ('Bank UTR: ' + (bankUtr || 'DIRECT_WIRE')) : (method === 'offline' ? 'Academy Admissions Desk' : 'Instant Simulation')))">
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                 
-                <!-- Item Summary Card -->
-                <div class="bg-white rounded-2xl p-5 sm:p-6 border border-gray-200 shadow-2xs">
-                    <div class="flex items-center justify-between mb-3">
-                        <span class="text-[11px] font-bold uppercase tracking-wider text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100">
-                            {{ $item->examCategory ? $item->examCategory->name : 'Defence Exam' }}
-                        </span>
-                        <span class="text-xs font-mono font-semibold text-gray-400">
-                            {{ $type === 'course' ? 'DEFENCE CURRICULUM BATCH' : 'OFFICIAL CBT MOCK' }}
-                        </span>
-                    </div>
-
-                    <h2 class="text-base sm:text-lg font-bold text-gray-900 leading-snug">{{ $item->title }}</h2>
-                    <p class="text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed">{{ $item->description ?? $item->subtitle }}</p>
-
-                    <div class="mt-4 pt-4 border-t border-gray-100 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs text-gray-600">
-                        @if($type === 'course')
-                            <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
-                                <span class="block text-[10px] uppercase font-bold text-gray-400">Modules</span>
-                                <span class="font-bold text-gray-800">{{ $item->modules->count() ?? 0 }} Units</span>
-                            </div>
-                            <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
-                                <span class="block text-[10px] uppercase font-bold text-gray-400">Duration</span>
-                                <span class="font-bold text-gray-800">{{ $item->duration_text ?? '6 Months' }}</span>
-                            </div>
-                            <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
-                                <span class="block text-[10px] uppercase font-bold text-gray-400">Format</span>
-                                <span class="font-bold text-gray-800">HD Video &amp; Notes</span>
-                            </div>
-                            <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
-                                <span class="block text-[10px] uppercase font-bold text-gray-400">Access</span>
-                                <span class="font-bold text-emerald-700">Instant</span>
-                            </div>
-                        @else
-                            <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
-                                <span class="block text-[10px] uppercase font-bold text-gray-400">Questions</span>
-                                <span class="font-bold text-gray-800">{{ $item->questions_count ?? $item->questions()->count() }} MCQs</span>
-                            </div>
-                            <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
-                                <span class="block text-[10px] uppercase font-bold text-gray-400">Time Limit</span>
-                                <span class="font-bold text-gray-800">{{ $item->duration_minutes }} Mins</span>
-                            </div>
-                            <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
-                                <span class="block text-[10px] uppercase font-bold text-gray-400">Marking</span>
-                                <span class="font-bold text-gray-800">Negative (-0.33)</span>
-                            </div>
-                            <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
-                                <span class="block text-[10px] uppercase font-bold text-gray-400">Solutions</span>
-                                <span class="font-bold text-emerald-700">Detailed</span>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-
-                <!-- Payment Methods Form Container -->
-                <form action="{{ $formAction }}" method="POST" id="checkout-form" @submit.prevent="submitPayment()">
-                    @csrf
+                <!-- Left Column: Simple & Fast Payment Choice (7 Cols) -->
+                <div class="lg:col-span-7 space-y-4">
                     
-                    <!-- Hidden Dynamic Fields for Controller -->
-                    <input type="hidden" name="payment_method" :value="method">
-                    <input type="hidden" name="coupon_code" :value="appliedCoupon ? appliedCoupon.code : ''">
-                    <input type="hidden" name="payment_reference" :value="razorpayPaymentId || bankUtr || ('pay_' + Math.random().toString(36).substring(2, 10))">
-                    <input type="hidden" name="razorpay_payment_id" :value="razorpayPaymentId">
-                    <input type="hidden" name="razorpay_order_id" :value="razorpayOrderId">
-                    <input type="hidden" name="razorpay_signature" :value="razorpaySignature">
-                    <input type="hidden" name="method_meta" :value="method === 'razorpay' ? ('Razorpay ' + razorpayConfig.mode.toUpperCase() + ' Mode') : (method === 'upi' ? (vpaInput || paymentConfig.upi.vpa) : (method === 'bank' ? ('Bank UTR: ' + (bankUtr || 'NEFT_DIRECT')) : (method === 'offline' ? ('Admissions Desk - ' + '{{ $user->phone ?? $user->email }}') : (method === 'netbanking' ? selectedBank : (method === 'card' ? (card.brand + ' ending ' + (card.number.slice(-4) || 'XXXX')) : 'SANDBOX_OK')))))">
-
-                    <div class="bg-white rounded-2xl border border-gray-200 shadow-2xs overflow-hidden">
-                        
-                        <!-- Gateway Method Navigation Tabs -->
-                        <div class="p-4 sm:p-5 border-b border-gray-200 bg-gray-50/70">
-                            <h3 class="text-xs font-bold uppercase tracking-wider text-gray-600 mb-3">Choose Payment Method</h3>
-                            
-                            <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                                
-                                <!-- Razorpay Tab -->
-                                @if($paymentConfig['razorpay']['enabled'])
-                                    <button type="button" 
-                                            @click="method = 'razorpay'"
-                                            class="flex flex-col items-center justify-center p-3 rounded-xl border text-center transition relative"
-                                            :class="method === 'razorpay' ? 'bg-blue-950 border-blue-950 text-white shadow-xs font-bold ring-1 ring-blue-950' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 font-medium'">
-                                        <span class="text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-amber-400 text-blue-950 absolute -top-2 right-1.5">Official</span>
-                                        <svg class="w-5 h-5 mb-1" :class="method === 'razorpay' ? 'text-white' : 'text-blue-950'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                                        <span class="text-xs">Razorpay</span>
-                                    </button>
-                                @endif
-
-                                <!-- Direct UPI Tab -->
-                                @if($paymentConfig['upi']['enabled'])
-                                    <button type="button" 
-                                            @click="method = 'upi'"
-                                            class="flex flex-col items-center justify-center p-3 rounded-xl border text-center transition relative"
-                                            :class="method === 'upi' ? 'bg-white border-blue-600 text-blue-700 shadow-xs ring-1 ring-blue-600 font-bold' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 font-medium'">
-                                        <span class="text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 absolute -top-2 right-2">Instant</span>
-                                        <svg class="w-5 h-5 mb-1 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
-                                        <span class="text-xs">UPI / QR</span>
-                                    </button>
-                                @endif
-
-                                <!-- Bank Transfer Tab -->
-                                @if($paymentConfig['bank']['enabled'])
-                                    <button type="button" 
-                                            @click="method = 'bank'"
-                                            class="flex flex-col items-center justify-center p-3 rounded-xl border text-center transition"
-                                            :class="method === 'bank' ? 'bg-white border-indigo-600 text-indigo-700 shadow-xs ring-1 ring-indigo-600 font-bold' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 font-medium'">
-                                        <svg class="w-5 h-5 mb-1 text-indigo-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                                        <span class="text-xs">Bank Wire</span>
-                                    </button>
-                                @endif
-
-                                <!-- Card Tab -->
-                                @if($paymentConfig['methods']['card'])
-                                    <button type="button" 
-                                            @click="method = 'card'"
-                                            class="flex flex-col items-center justify-center p-3 rounded-xl border text-center transition"
-                                            :class="method === 'card' ? 'bg-white border-blue-600 text-blue-700 shadow-xs ring-1 ring-blue-600 font-bold' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 font-medium'">
-                                        <svg class="w-5 h-5 mb-1 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-                                        <span class="text-xs">Debit / Card</span>
-                                    </button>
-                                @endif
-
-                                <!-- Net Banking Tab -->
-                                @if($paymentConfig['methods']['netbanking'])
-                                    <button type="button" 
-                                            @click="method = 'netbanking'"
-                                            class="flex flex-col items-center justify-center p-3 rounded-xl border text-center transition"
-                                            :class="method === 'netbanking' ? 'bg-white border-blue-600 text-blue-700 shadow-xs ring-1 ring-blue-600 font-bold' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 font-medium'">
-                                        <svg class="w-5 h-5 mb-1 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                                        <span class="text-xs">Net Banking</span>
-                                    </button>
-                                @endif
-
-                                <!-- EMI Tab -->
-                                @if($paymentConfig['methods']['emi'])
-                                    <button type="button" 
-                                            @click="method = 'emi'"
-                                            class="flex flex-col items-center justify-center p-3 rounded-xl border text-center transition"
-                                            :class="method === 'emi' ? 'bg-white border-blue-600 text-blue-700 shadow-xs ring-1 ring-blue-600 font-bold' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 font-medium'">
-                                        <svg class="w-5 h-5 mb-1 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                        <span class="text-xs">0% EMI</span>
-                                    </button>
-                                @endif
-
-                                <!-- Offline Academy Desk Tab -->
-                                @if($paymentConfig['methods']['offline'])
-                                    <button type="button" 
-                                            @click="method = 'offline'"
-                                            class="flex flex-col items-center justify-center p-3 rounded-xl border text-center transition"
-                                            :class="method === 'offline' ? 'bg-white border-amber-600 text-amber-800 shadow-xs ring-1 ring-amber-600 font-bold' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 font-medium'">
-                                        <svg class="w-5 h-5 mb-1 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                        <span class="text-xs">Campus Desk</span>
-                                    </button>
-                                @endif
-
-                                <!-- Sandbox / Fast Mock Tab -->
-                                @if($razorpayConfig['mode'] === 'test' || ($paymentConfig['razorpay']['fallback_simulation'] ?? true))
-                                    <button type="button" 
-                                            @click="method = 'mock'"
-                                            class="flex flex-col items-center justify-center p-3 rounded-xl border text-center transition"
-                                            :class="method === 'mock' ? 'bg-emerald-50 border-emerald-600 text-emerald-800 shadow-xs ring-1 ring-emerald-600 font-bold' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 font-medium'">
-                                        <svg class="w-5 h-5 mb-1 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                        <span class="text-xs">Instant Test</span>
-                                    </button>
-                                @endif
-
+                    <!-- Cadet Identity Pill -->
+                    <div class="bg-white rounded-xl p-3.5 border border-slate-200/90 shadow-2xs flex items-center justify-between text-xs">
+                        <div class="flex items-center space-x-2.5">
+                            <div class="w-8 h-8 rounded-full bg-blue-950 text-white font-bold flex items-center justify-center text-xs">
+                                {{ strtoupper(substr($user->name, 0, 1)) }}
                             </div>
-                        </div>
-
-                        <!-- Tab 0: Razorpay Official Gateway Panel -->
-                        <div x-show="method === 'razorpay'" class="p-5 sm:p-6 space-y-5">
-                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-blue-950/20 bg-blue-950/[0.03]">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-10 h-10 rounded-xl bg-blue-950 text-white flex items-center justify-center font-bold text-lg shrink-0">
-                                        ₹
-                                    </div>
-                                    <div>
-                                        <div class="flex items-center space-x-2">
-                                            <h4 class="text-xs sm:text-sm font-bold text-slate-900">{{ $paymentConfig['razorpay']['merchant_name'] ?? 'Razorpay Gateway' }}</h4>
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold"
-                                                  :class="razorpayConfig.mode === 'live' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'">
-                                                <span class="w-1.5 h-1.5 rounded-full mr-1" :class="razorpayConfig.mode === 'live' ? 'bg-amber-600' : 'bg-blue-600'"></span>
-                                                <span x-text="razorpayConfig.mode.toUpperCase() + ' MODE'"></span>
-                                            </span>
-                                        </div>
-                                        <p class="text-[11px] text-slate-500 mt-0.5">Pay seamlessly with any UPI App (GPay, PhonePe, Paytm, BHIM), all Debit/Credit Cards, Net Banking from 50+ banks, EMI, and Wallets.</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Cadet Verified Prefill Details -->
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-                                <div>
-                                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Enrolling Cadet</span>
-                                    <span class="font-semibold text-slate-900 truncate block">{{ $user->name }}</span>
-                                </div>
-                                <div>
-                                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Candidate Email</span>
-                                    <span class="font-mono text-slate-700 truncate block">{{ $user->email }}</span>
-                                </div>
-                                <div>
-                                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Contact Phone</span>
-                                    <span class="font-mono text-slate-700">{{ $user->phone ?? '+91 98765 43210' }}</span>
-                                </div>
-                            </div>
-
-                            <!-- Accepted Payment Instruments Badges -->
-                            <div class="space-y-2 pt-1">
-                                <span class="text-[11px] font-semibold text-slate-500 block">Supported Payment Channels inside Razorpay Modal:</span>
-                                <div class="flex flex-wrap gap-2 text-[11px]">
-                                    <span class="px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 font-medium">⚡ Instant UPI (Intent &amp; QR)</span>
-                                    <span class="px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 font-medium">💳 RuPay, Visa, Mastercard</span>
-                                    <span class="px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 font-medium">🏦 NetBanking (50+ Banks)</span>
-                                    <span class="px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 font-medium">⏱ No-Cost EMI &amp; PayLater</span>
-                                </div>
-                            </div>
-
-                            <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-800 flex items-center space-x-2">
-                                <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                                <span>Encrypted with SHA-256 HMAC cryptographic signature verification and instant automated LMS access unlock.</span>
-                            </div>
-                        </div>
-
-                        <!-- Tab 1: UPI / QR Payment -->
-                        <div x-show="method === 'upi'" class="p-5 sm:p-6 space-y-6">
-                            
-                            <div class="flex flex-col md:flex-row items-center gap-6 p-4 rounded-xl border border-blue-100 bg-blue-50/30">
-                                
-                                <!-- Dynamic NPCI QR Code Box -->
-                                <div class="flex flex-col items-center text-center p-3 bg-white rounded-xl border border-gray-200 shadow-xs">
-                                    <div class="w-40 h-40 bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-center overflow-hidden p-2">
-                                        <img :src="upiQrUrl" 
-                                             alt="Scan to Pay via UPI" 
-                                             class="w-full h-full object-contain"
-                                             loading="lazy">
-                                    </div>
-                                    <div class="mt-2 flex items-center space-x-1.5 text-[11px] font-mono text-gray-600">
-                                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                        <span>Scan with any UPI App</span>
-                                    </div>
-                                    <div class="text-[10px] text-gray-400 mt-0.5">
-                                        Expires in <span class="font-bold text-red-600 font-mono" x-text="formattedCountdown">14:59</span>
-                                    </div>
-                                </div>
-
-                                <!-- Quick UPI Details & Copy VPA -->
-                                <div class="flex-1 space-y-3 w-full">
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-xs font-bold text-gray-800 uppercase tracking-wide">{{ $paymentConfig['upi']['merchant_name'] ?? 'Academy Official UPI' }}</span>
-                                        <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Verified</span>
-                                    </div>
-
-                                    <div class="flex items-center justify-between bg-white px-3.5 py-2.5 rounded-lg border border-gray-200 text-xs">
-                                        <span class="font-mono font-bold text-gray-800">{{ $paymentConfig['upi']['vpa'] ?? 'nirmaanacademy@icici' }}</span>
-                                        <button type="button" 
-                                                @click="copyVpa()" 
-                                                class="px-2.5 py-1 text-[11px] font-bold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded transition flex items-center space-x-1">
-                                            <span x-show="!copiedVpa">Copy VPA</span>
-                                            <span x-show="copiedVpa" style="display:none;" class="text-emerald-700">✓ Copied!</span>
-                                        </button>
-                                    </div>
-
-                                    <p class="text-[11px] text-slate-500">
-                                        {{ $paymentConfig['upi']['instructions'] ?? 'Scan QR with any UPI App (GPay, PhonePe, Paytm, BHIM) or pay to VPA. Enter UTR reference to verify.' }}
-                                    </p>
-
-                                    <!-- Quick App Links -->
-                                    <div class="pt-1">
-                                        <span class="text-[11px] font-semibold text-gray-500 block mb-2">Supported UPI Apps on Mobile:</span>
-                                        <div class="grid grid-cols-4 gap-2 text-center">
-                                            <div class="p-2 rounded-lg border border-gray-200 bg-white hover:border-blue-500 cursor-pointer transition">
-                                                <span class="text-xs font-bold text-gray-800 block">GPay</span>
-                                                <span class="text-[9px] text-gray-400">Google Pay</span>
-                                            </div>
-                                            <div class="p-2 rounded-lg border border-gray-200 bg-white hover:border-blue-500 cursor-pointer transition">
-                                                <span class="text-xs font-bold text-purple-700 block">PhonePe</span>
-                                                <span class="text-[9px] text-gray-400">UPI Intent</span>
-                                            </div>
-                                            <div class="p-2 rounded-lg border border-gray-200 bg-white hover:border-blue-500 cursor-pointer transition">
-                                                <span class="text-xs font-bold text-sky-600 block">Paytm</span>
-                                                <span class="text-[9px] text-gray-400">UPI / Wallet</span>
-                                            </div>
-                                            <div class="p-2 rounded-lg border border-gray-200 bg-white hover:border-blue-500 cursor-pointer transition">
-                                                <span class="text-xs font-bold text-amber-700 block">BHIM</span>
-                                                <span class="text-[9px] text-gray-400">NPCI Govt</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Custom VPA ID Input with Live Verification -->
-                            <div class="space-y-2 pt-2 border-t border-gray-100">
-                                <label class="block text-xs font-bold text-gray-700">Or Pay via Cadet UPI ID / Virtual Payment Address</label>
-                                <div class="flex gap-2">
-                                    <div class="relative flex-1">
-                                        <input type="text" 
-                                               x-model="vpaInput" 
-                                               placeholder="mobileNumber@upi or username@okhdfcbank"
-                                               class="w-full text-xs font-mono px-3.5 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none">
-                                        <span x-show="vpaVerified" style="display:none;" class="absolute right-3 top-2.5 text-xs font-bold text-emerald-600 flex items-center space-x-1">
-                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                                            <span>VERIFIED</span>
-                                        </span>
-                                    </div>
-                                    <button type="button" 
-                                            @click="verifyVpa()" 
-                                            :disabled="vpaVerifying"
-                                            class="px-4 py-2.5 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition">
-                                        <span x-show="!vpaVerifying">Verify ID</span>
-                                        <span x-show="vpaVerifying" style="display:none;">Verifying...</span>
-                                    </button>
-                                </div>
-                                <p class="text-[11px] text-gray-400">Collect request will be dispatched directly to your UPI mobile app upon confirmation.</p>
-                            </div>
-
-                        </div>
-
-                        <!-- Tab: Direct Bank Transfer (IMPS / NEFT / RTGS) -->
-                        <div x-show="method === 'bank'" class="p-5 sm:p-6 space-y-5" style="display:none;">
-                            <div class="p-4 rounded-xl border border-indigo-200 bg-indigo-50/40 space-y-3">
-                                <div class="flex items-center justify-between border-b border-indigo-100 pb-2.5">
-                                    <div>
-                                        <span class="text-xs font-bold text-indigo-950 uppercase tracking-wide block">Official Academy Bank Account</span>
-                                        <span class="text-[11px] text-indigo-700">{{ $paymentConfig['bank']['name'] ?? 'State Bank of India' }}</span>
-                                    </div>
-                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
-                                        Current Account
-                                    </span>
-                                </div>
-
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
-                                    <div class="bg-white p-3 rounded-lg border border-slate-200 flex items-center justify-between">
-                                        <div>
-                                            <span class="text-[10px] uppercase font-bold text-slate-400 block">Beneficiary Name</span>
-                                            <span class="font-bold text-slate-900 block truncate">{{ $paymentConfig['bank']['account_name'] ?? 'Nirmaan Academy' }}</span>
-                                        </div>
-                                        <button type="button" @click="copyBankField('{{ addslashes($paymentConfig['bank']['account_name'] ?? '') }}', 'acc_name')"
-                                                class="px-2 py-1 text-[10px] font-semibold text-indigo-700 bg-indigo-50 rounded hover:bg-indigo-100">
-                                            <span x-text="copiedBankField === 'acc_name' ? 'Copied!' : 'Copy'">Copy</span>
-                                        </button>
-                                    </div>
-
-                                    <div class="bg-white p-3 rounded-lg border border-slate-200 flex items-center justify-between">
-                                        <div>
-                                            <span class="text-[10px] uppercase font-bold text-slate-400 block">Account Number</span>
-                                            <span class="font-mono font-bold text-slate-900 block">{{ $paymentConfig['bank']['account_number'] ?? '4092101004521' }}</span>
-                                        </div>
-                                        <button type="button" @click="copyBankField('{{ addslashes($paymentConfig['bank']['account_number'] ?? '') }}', 'acc_num')"
-                                                class="px-2 py-1 text-[10px] font-semibold text-indigo-700 bg-indigo-50 rounded hover:bg-indigo-100">
-                                            <span x-text="copiedBankField === 'acc_num' ? 'Copied!' : 'Copy'">Copy</span>
-                                        </button>
-                                    </div>
-
-                                    <div class="bg-white p-3 rounded-lg border border-slate-200 flex items-center justify-between">
-                                        <div>
-                                            <span class="text-[10px] uppercase font-bold text-slate-400 block">IFSC Code</span>
-                                            <span class="font-mono font-bold text-slate-900 block uppercase">{{ $paymentConfig['bank']['ifsc_code'] ?? 'SBIN0001234' }}</span>
-                                        </div>
-                                        <button type="button" @click="copyBankField('{{ addslashes($paymentConfig['bank']['ifsc_code'] ?? '') }}', 'ifsc')"
-                                                class="px-2 py-1 text-[10px] font-semibold text-indigo-700 bg-indigo-50 rounded hover:bg-indigo-100">
-                                            <span x-text="copiedBankField === 'ifsc' ? 'Copied!' : 'Copy'">Copy</span>
-                                        </button>
-                                    </div>
-
-                                    <div class="bg-white p-3 rounded-lg border border-slate-200">
-                                        <span class="text-[10px] uppercase font-bold text-slate-400 block">Branch Location</span>
-                                        <span class="font-semibold text-slate-800 block truncate">{{ $paymentConfig['bank']['branch'] ?? 'Main Cantt Branch' }}</span>
-                                    </div>
-                                </div>
-
-                                <div class="text-[11px] text-indigo-900 pt-1">
-                                    {{ $paymentConfig['bank']['instructions'] ?? 'Transfer via IMPS / NEFT / RTGS and input your bank reference UTR number below.' }}
-                                </div>
-                            </div>
-
-                            <!-- UTR Reference Input -->
-                            <div class="space-y-1.5 pt-1">
-                                <label class="block text-xs font-bold text-slate-700">Bank Transfer Reference / UTR Number</label>
-                                <input type="text" x-model="bankUtr" placeholder="e.g. 234120934812 (12 or 16-digit UTR)"
-                                       class="w-full text-xs font-mono uppercase px-3.5 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none">
-                                <p class="text-[11px] text-slate-400">Providing the UTR expedites verification and guarantees fast automated receipt matching.</p>
-                            </div>
-                        </div>
-
-                        <!-- Tab 2: Credit / Debit Card with Real-time Preview -->
-                        <div x-show="method === 'card'" style="display:none;" class="p-5 sm:p-6 space-y-6">
-                            
-                            <!-- Virtual Interactive Card -->
-                            <div class="bg-gray-900 text-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-800 relative overflow-hidden max-w-sm mx-auto">
-                                <div class="flex items-center justify-between mb-6">
-                                    <div class="w-10 h-7 rounded bg-amber-400/80 border border-amber-300 flex items-center justify-center space-x-1">
-                                        <div class="w-2 h-4 border-r border-amber-600/40"></div>
-                                        <div class="w-2 h-4 border-r border-amber-600/40"></div>
-                                    </div>
-                                    <span class="text-xs font-black tracking-widest uppercase px-2 py-0.5 rounded bg-white/10" x-text="card.brand.toUpperCase()">RUPAY</span>
-                                </div>
-
-                                <div class="text-base sm:text-lg font-mono tracking-wider font-bold mb-4 text-gray-100">
-                                    <span x-text="card.formattedNumber || '•••• •••• •••• ••••'">•••• •••• •••• ••••</span>
-                                </div>
-
-                                <div class="flex items-end justify-between text-xs text-gray-300">
-                                    <div>
-                                        <span class="text-[9px] uppercase tracking-wider text-gray-400 block">Cadet Name</span>
-                                        <span class="font-bold tracking-wide uppercase text-white" x-text="card.name || 'CADET NAME'">CADET NAME</span>
-                                    </div>
-                                    <div>
-                                        <span class="text-[9px] uppercase tracking-wider text-gray-400 block">Valid Thru</span>
-                                        <span class="font-mono font-bold text-white" x-text="card.expiry || 'MM/YY'">MM/YY</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Card Form Inputs -->
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-700 mb-1">Card Number</label>
-                                    <div class="relative">
-                                        <input type="text" 
-                                               placeholder="XXXX XXXX XXXX XXXX" 
-                                               :value="card.formattedNumber"
-                                               @input="onCardInput($event)"
-                                               maxlength="19"
-                                               class="w-full text-xs font-mono px-3.5 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none">
-                                        <span class="absolute right-3 top-2.5 text-[10px] font-bold text-gray-400 uppercase" x-text="card.brand">RuPay</span>
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-xs font-bold text-gray-700 mb-1">Cardholder Full Name</label>
-                                        <input type="text" 
-                                               x-model="card.name" 
-                                               placeholder="As printed on card"
-                                               class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none">
-                                    </div>
-
-                                    <div class="grid grid-cols-2 gap-2">
-                                        <div>
-                                            <label class="block text-xs font-bold text-gray-700 mb-1">Expiry (MM/YY)</label>
-                                            <input type="text" 
-                                                   placeholder="MM/YY" 
-                                                   :value="card.expiry"
-                                                   @input="onExpiryInput($event)"
-                                                   maxlength="5"
-                                                   class="w-full text-xs font-mono text-center px-3 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none">
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs font-bold text-gray-700 mb-1">CVV / CVC</label>
-                                            <input type="password" 
-                                                   placeholder="•••" 
-                                                   :value="card.cvv"
-                                                   @input="onCvvInput($event)"
-                                                   maxlength="4"
-                                                   class="w-full text-xs font-mono text-center px-3 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="flex items-center space-x-2 pt-1">
-                                    <input type="checkbox" id="save-card-cb" x-model="saveCard" class="text-blue-600 focus:ring-blue-500 rounded">
-                                    <label for="save-card-cb" class="text-xs text-gray-600">Save card securely as per RBI tokenization standards for future test series</label>
-                                </div>
-                            </div>
-
-                        </div>
-
-                        <!-- Tab 3: Net Banking with Top Indian Banks -->
-                        <div x-show="method === 'netbanking'" style="display:none;" class="p-5 sm:p-6 space-y-5">
                             <div>
-                                <label class="block text-xs font-bold text-gray-700 mb-2.5">Popular Indian Banks</label>
-                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                                    @php
-                                        $banks = [
-                                            ['code' => 'SBI', 'name' => 'State Bank of India'],
-                                            ['code' => 'HDFC', 'name' => 'HDFC Bank'],
-                                            ['code' => 'ICICI', 'name' => 'ICICI Bank'],
-                                            ['code' => 'AXIS', 'name' => 'Axis Bank'],
-                                            ['code' => 'PNB', 'name' => 'Punjab National Bank'],
-                                            ['code' => 'BOB', 'name' => 'Bank of Baroda'],
-                                        ];
-                                    @endphp
-                                    @foreach($banks as $b)
-                                        <button type="button" 
-                                                @click="selectedBank = '{{ $b['code'] }}'"
-                                                class="flex items-center space-x-2.5 p-3 rounded-xl border text-left transition"
-                                                :class="selectedBank === '{{ $b['code'] }}' ? 'bg-blue-50/60 border-blue-600 text-blue-900 font-bold ring-1 ring-blue-600' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'">
-                                            <span class="w-6 h-6 rounded bg-gray-100 text-gray-800 text-[10px] font-black flex items-center justify-center shrink-0">
-                                                {{ substr($b['code'], 0, 3) }}
-                                            </span>
-                                            <div class="truncate">
-                                                <span class="text-xs block leading-tight truncate">{{ $b['name'] }}</span>
-                                                <span class="text-[10px] text-gray-400 font-mono">{{ $b['code'] }}</span>
+                                <span class="font-bold text-slate-900 block">{{ $user->name }}</span>
+                                <span class="text-slate-500 font-mono text-[11px]">{{ $user->email }}</span>
+                            </div>
+                        </div>
+                        <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                            Verified Cadet
+                        </span>
+                    </div>
+
+                    <!-- Payment Options Box -->
+                    <div class="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 bg-slate-50/70">
+                            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-700">Select Payment Option</h2>
+                        </div>
+
+                        <div class="p-4 space-y-3">
+
+                            <!-- Option 1: Razorpay All-in-One (Recommended & Clean) -->
+                            @if($paymentConfig['razorpay']['enabled'])
+                                <label class="block p-3.5 rounded-xl border-2 cursor-pointer transition-all"
+                                       :class="method === 'razorpay' ? 'border-blue-950 bg-blue-50/30 shadow-2xs' : 'border-slate-200 hover:border-slate-300 bg-white'">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <input type="radio" name="payment_choice" value="razorpay" x-model="method" class="w-4 h-4 text-blue-950 focus:ring-blue-950">
+                                            <div>
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-sm font-bold text-slate-900">Online Payment</span>
+                                                    <span class="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">Fastest</span>
+                                                </div>
+                                                <p class="text-xs text-slate-500 mt-0.5">UPI (GPay, PhonePe, Paytm), Debit/Credit Cards, Net Banking, EMI</p>
                                             </div>
-                                        </button>
-                                    @endforeach
-                                </div>
-                            </div>
-
-                            <div class="pt-2 border-t border-gray-100">
-                                <label class="block text-xs font-bold text-gray-700 mb-1.5">All Other Scheduled Commercial Banks</label>
-                                <select x-model="selectedBank" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none bg-white">
-                                    <option value="KOTAK">Kotak Mahindra Bank</option>
-                                    <option value="CANARA">Canara Bank</option>
-                                    <option value="UNION">Union Bank of India</option>
-                                    <option value="INDUSIND">IndusInd Bank</option>
-                                    <option value="IDFC">IDFC FIRST Bank</option>
-                                    <option value="FEDERAL">Federal Bank</option>
-                                    <option value="YES">Yes Bank</option>
-                                    <option value="INDIAN">Indian Bank</option>
-                                    <option value="CBI">Central Bank of India</option>
-                                    <option value="BOI">Bank of India</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Tab 4: 0% EMI & Pay Later -->
-                        <div x-show="method === 'emi'" style="display:none;" class="p-5 sm:p-6 space-y-5">
-                            <div class="flex items-center justify-between p-3.5 rounded-xl bg-blue-50/60 border border-blue-200">
-                                <div>
-                                    <span class="text-xs font-bold text-blue-900 block">0% No-Cost EMI Available</span>
-                                    <span class="text-[11px] text-blue-700">Split your tuition fee into interest-free monthly installments.</span>
-                                </div>
-                                <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-blue-200 text-blue-800">Pre-Approved</span>
-                            </div>
-
-                            <div class="space-y-3">
-                                <label class="flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition"
-                                       :class="emiTenure === 3 ? 'border-blue-600 bg-blue-50/30' : 'border-gray-200 hover:bg-gray-50'">
-                                    <div class="flex items-center space-x-3">
-                                        <input type="radio" name="emi_plan" value="3" x-model="emiTenure" class="text-blue-600">
-                                        <div>
-                                            <span class="text-xs font-bold text-gray-900 block">3 Months No-Cost EMI</span>
-                                            <span class="text-[11px] text-gray-500 font-mono">₹ <span x-text="(finalPayable / 3).toFixed(2)"></span> / month</span>
                                         </div>
                                     </div>
-                                    <span class="text-[11px] font-bold text-emerald-700">0% Interest</span>
-                                </label>
 
-                                <label class="flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition"
-                                       :class="emiTenure === 6 ? 'border-blue-600 bg-blue-50/30' : 'border-gray-200 hover:bg-gray-50'">
+                                    <!-- Quick Instrument Badges -->
+                                    <div class="mt-2.5 pt-2.5 border-t border-slate-100 flex flex-wrap gap-1.5 text-[10px] font-semibold text-slate-600">
+                                        <span class="px-2 py-0.5 bg-slate-100 rounded">GPay</span>
+                                        <span class="px-2 py-0.5 bg-slate-100 rounded">PhonePe</span>
+                                        <span class="px-2 py-0.5 bg-slate-100 rounded">Paytm</span>
+                                        <span class="px-2 py-0.5 bg-slate-100 rounded">RuPay / Visa</span>
+                                        <span class="px-2 py-0.5 bg-slate-100 rounded">All Banks</span>
+                                    </div>
+                                </label>
+                            @endif
+
+                            <!-- Option 2: Direct UPI QR Code -->
+                            @if($paymentConfig['upi']['enabled'])
+                                <label class="block p-3.5 rounded-xl border-2 cursor-pointer transition-all"
+                                       :class="method === 'upi' ? 'border-blue-950 bg-blue-50/30 shadow-2xs' : 'border-slate-200 hover:border-slate-300 bg-white'">
                                     <div class="flex items-center space-x-3">
-                                        <input type="radio" name="emi_plan" value="6" x-model="emiTenure" class="text-blue-600">
+                                        <input type="radio" name="payment_choice" value="upi" x-model="method" class="w-4 h-4 text-blue-950 focus:ring-blue-950">
                                         <div>
-                                            <span class="text-xs font-bold text-gray-900 block">6 Months Flexible EMI</span>
-                                            <span class="text-[11px] text-gray-500 font-mono">₹ <span x-text="(finalPayable / 6).toFixed(2)"></span> / month</span>
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-sm font-bold text-slate-900">Direct UPI &amp; QR Code</span>
+                                            </div>
+                                            <p class="text-xs text-slate-500 mt-0.5">Scan official academy QR with any UPI app</p>
                                         </div>
                                     </div>
-                                    <span class="text-[11px] font-bold text-emerald-700">0% Surcharge</span>
+
+                                    <!-- Expandable Direct UPI Details -->
+                                    <div x-show="method === 'upi'" x-transition class="mt-3 pt-3 border-t border-slate-200/80">
+                                        <div class="flex flex-col sm:flex-row items-center gap-4 bg-white p-3 rounded-lg border border-slate-200">
+                                            <div class="w-32 h-32 bg-slate-50 p-1.5 rounded-lg border border-slate-200 shrink-0">
+                                                <img :src="upiQrUrl" alt="Academy UPI QR" class="w-full h-full object-contain">
+                                            </div>
+                                            <div class="flex-1 space-y-2 text-xs text-center sm:text-left w-full">
+                                                <div>
+                                                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Official UPI ID</span>
+                                                    <span class="font-mono font-bold text-slate-900 text-sm block">{{ $paymentConfig['upi']['vpa'] ?? 'nirmaanacademy@icici' }}</span>
+                                                </div>
+                                                <button type="button" @click="copyVpa()" 
+                                                        class="px-3 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-950 text-xs font-bold border border-blue-200 transition-colors inline-flex items-center space-x-1">
+                                                    <span x-text="copiedVpa ? '✓ Copied!' : 'Copy UPI ID'">Copy UPI ID</span>
+                                                </button>
+                                                <p class="text-[11px] text-slate-500">{{ $paymentConfig['upi']['instructions'] }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </label>
-                            </div>
+                            @endif
 
-                            <div class="p-3 bg-gray-50 rounded-xl border border-gray-100 text-[11px] text-gray-500 flex items-center space-x-2">
-                                <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                <span>Supported via Simpl, LazyPay, and major Indian credit card issuer installments.</span>
-                            </div>
+                            <!-- Option 3: Direct Bank Wire (IMPS / NEFT) -->
+                            @if($paymentConfig['bank']['enabled'])
+                                <label class="block p-3.5 rounded-xl border-2 cursor-pointer transition-all"
+                                       :class="method === 'bank' ? 'border-blue-950 bg-blue-50/30 shadow-2xs' : 'border-slate-200 hover:border-slate-300 bg-white'">
+                                    <div class="flex items-center space-x-3">
+                                        <input type="radio" name="payment_choice" value="bank" x-model="method" class="w-4 h-4 text-blue-950 focus:ring-blue-950">
+                                        <div>
+                                            <span class="text-sm font-bold text-slate-900">Direct Bank Transfer (IMPS / NEFT)</span>
+                                            <p class="text-xs text-slate-500 mt-0.5">Wire directly to {{ $paymentConfig['bank']['name'] }}</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Expandable Bank Account Details -->
+                                    <div x-show="method === 'bank'" x-transition class="mt-3 pt-3 border-t border-slate-200/80 space-y-2.5">
+                                        <div class="bg-white p-3 rounded-lg border border-slate-200 text-xs space-y-1.5 font-mono">
+                                            <div class="flex justify-between">
+                                                <span class="text-slate-500">Bank:</span>
+                                                <span class="font-bold text-slate-900">{{ $paymentConfig['bank']['name'] }}</span>
+                                            </div>
+                                            <div class="flex justify-between">
+                                                <span class="text-slate-500">Account Name:</span>
+                                                <span class="font-bold text-slate-900">{{ $paymentConfig['bank']['account_name'] }}</span>
+                                            </div>
+                                            <div class="flex justify-between items-center">
+                                                <span class="text-slate-500">Account No:</span>
+                                                <div class="flex items-center space-x-1">
+                                                    <span class="font-bold text-slate-900">{{ $paymentConfig['bank']['account_number'] }}</span>
+                                                    <button type="button" @click="copyBankField('{{ addslashes($paymentConfig['bank']['account_number'] ?? '') }}', 'acc')" class="text-blue-700 text-[10px] font-bold underline">
+                                                        <span x-text="copiedBankField === 'acc' ? 'Copied' : 'Copy'">Copy</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="flex justify-between items-center">
+                                                <span class="text-slate-500">IFSC Code:</span>
+                                                <div class="flex items-center space-x-1">
+                                                    <span class="font-bold text-slate-900">{{ $paymentConfig['bank']['ifsc_code'] }}</span>
+                                                    <button type="button" @click="copyBankField('{{ addslashes($paymentConfig['bank']['ifsc_code'] ?? '') }}', 'ifsc')" class="text-blue-700 text-[10px] font-bold underline">
+                                                        <span x-text="copiedBankField === 'ifsc' ? 'Copied' : 'Copy'">Copy</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <input type="text" x-model="bankUtr" placeholder="Enter Transfer UTR / Ref Number (Optional)"
+                                               class="w-full text-xs font-mono px-3 py-2 border border-slate-300 rounded-lg outline-none focus:ring-1 focus:ring-blue-950">
+                                    </div>
+                                </label>
+                            @endif
+
+                            <!-- Option 4: Campus Admissions Desk (If Enabled) -->
+                            @if($paymentConfig['methods']['offline'])
+                                <label class="block p-3.5 rounded-xl border-2 cursor-pointer transition-all"
+                                       :class="method === 'offline' ? 'border-blue-950 bg-blue-50/30 shadow-2xs' : 'border-slate-200 hover:border-slate-300 bg-white'">
+                                    <div class="flex items-center space-x-3">
+                                        <input type="radio" name="payment_choice" value="offline" x-model="method" class="w-4 h-4 text-blue-950 focus:ring-blue-950">
+                                        <div>
+                                            <span class="text-sm font-bold text-slate-900">Academy Campus Desk</span>
+                                            <p class="text-xs text-slate-500 mt-0.5">Pay in cash or DD at admissions desk: {{ $paymentConfig['offline']['contact_phone'] }}</p>
+                                        </div>
+                                    </div>
+                                </label>
+                            @endif
+
+                            <!-- Option 5: Sandbox Test (If in Test Mode) -->
+                            @if($razorpayConfig['mode'] === 'test' || ($paymentConfig['razorpay']['fallback_simulation'] ?? true))
+                                <label class="block p-3 rounded-xl border cursor-pointer transition-all"
+                                       :class="method === 'mock' ? 'border-emerald-600 bg-emerald-50/40' : 'border-slate-200 hover:border-slate-300 bg-white'">
+                                    <div class="flex items-center space-x-3">
+                                        <input type="radio" name="payment_choice" value="mock" x-model="method" class="w-4 h-4 text-emerald-600 focus:ring-emerald-600">
+                                        <div>
+                                            <span class="text-xs font-bold text-emerald-900">Instant Test Simulation (Sandbox)</span>
+                                            <span class="text-[11px] text-emerald-700 block">Instant access without real bank deduction</span>
+                                        </div>
+                                    </div>
+                                </label>
+                            @endif
+
                         </div>
 
-                        <!-- Tab: Offline Campus Desk Payment -->
-                        <div x-show="method === 'offline'" class="p-5 sm:p-6 space-y-4" style="display:none;">
-                            <div class="p-4 rounded-xl border border-amber-200 bg-amber-50/50 space-y-3">
-                                <div class="flex items-start space-x-3">
-                                    <div class="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
-                                        🏫
-                                    </div>
-                                    <div>
-                                        <h4 class="text-xs font-bold text-amber-950">In-Person Campus Registration Desk</h4>
-                                        <p class="text-[11px] text-amber-900 mt-0.5 leading-relaxed">
-                                            {{ $paymentConfig['offline']['instructions'] ?? 'Visit our academy admissions desk during working hours to finalize registration in cash or DD.' }}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
-                                    <div class="bg-white p-3 rounded-lg border border-slate-200">
-                                        <span class="text-[10px] uppercase font-bold text-slate-400 block">Campus Address</span>
-                                        <span class="font-semibold text-slate-800 block">{{ $paymentConfig['offline']['campus_address'] ?? 'Nirmaan Defence Academy Campus' }}</span>
-                                    </div>
-
-                                    <div class="bg-white p-3 rounded-lg border border-slate-200">
-                                        <span class="text-[10px] uppercase font-bold text-slate-400 block">Admissions Desk Phone</span>
-                                        <span class="font-mono font-bold text-slate-800 block">{{ $paymentConfig['offline']['contact_phone'] ?? '+91 98765 43210' }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="text-[11px] text-slate-400">Clicking Pay &amp; Unlock generates a provisional admission token for instant verification upon arrival.</p>
-                        </div>
-
-                        <!-- Tab 5: Sandbox / Instant Mock Verification -->
-                        <div x-show="method === 'mock'" style="display:none;" class="p-5 sm:p-6 space-y-4">
-                            <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200">
-                                <div class="flex items-start space-x-3">
-                                    <div class="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 font-bold text-sm">
-                                        ✓
-                                    </div>
-                                    <div>
-                                        <h4 class="text-xs font-bold text-emerald-950">Zero-Friction Sandbox Verification Mode</h4>
-                                        <p class="text-[11px] text-emerald-800 mt-1 leading-relaxed">
-                                            Instant payment simulation without OTP or physical card swipe. Generates official transaction ID and activates academy access immediately.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-2 gap-3 text-xs text-gray-600 bg-gray-50 p-3.5 rounded-xl border border-gray-200">
-                                <div>
-                                    <span class="text-[10px] uppercase font-bold text-gray-400 block">Cadet Identifier</span>
-                                    <span class="font-mono font-bold text-gray-800">{{ $user->name }}</span>
-                                </div>
-                                <div>
-                                    <span class="text-[10px] uppercase font-bold text-gray-400 block">Gateway Ref</span>
-                                    <span class="font-mono font-bold text-emerald-700">MOCK_TEST_2026</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Submit CTA Bar -->
-                        <div class="p-4 sm:p-6 border-t border-gray-200 bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                            <div class="text-xs text-gray-500">
-                                <span>Total payable now: </span>
-                                <span class="text-base sm:text-lg font-black text-gray-900 font-mono">₹ <span x-text="finalPayable.toFixed(2)">{{ number_format($price, 2) }}</span></span>
-                            </div>
-
+                        <!-- Big High-Converting CTA Button -->
+                        <div class="p-4 bg-slate-50 border-t border-slate-200/80">
                             <button type="submit" 
                                     :disabled="isProcessing"
-                                    class="w-full sm:w-auto px-8 py-3.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-blue-700 hover:bg-blue-800 disabled:opacity-60 transition shadow-xs flex items-center justify-center space-x-2">
-                                <span>Pay ₹ <span x-text="finalPayable.toFixed(2)">{{ number_format($price, 2) }}</span> &amp; Unlock</span>
+                                    class="w-full py-3.5 px-6 rounded-xl font-bold text-sm sm:text-base text-white bg-blue-950 hover:bg-blue-900 active:scale-[0.99] transition-all shadow-md hover:shadow-lg flex items-center justify-center space-x-2 disabled:opacity-60 cursor-pointer">
+                                <span>🔒 Pay ₹<span x-text="finalPayable.toFixed(2)">{{ number_format($price, 2) }}</span> &amp; Unlock Access Now</span>
                                 <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                             </button>
-                        </div>
-
-                    </div>
-
-                </form>
-
-            </div>
-
-            <!-- Right Column: Cart Summary & Dynamic Coupons -->
-            <div class="lg:col-span-5 space-y-6">
-                
-                <!-- Order Fee Structure Breakdown -->
-                <div class="bg-white rounded-2xl p-5 sm:p-6 border border-gray-200 shadow-2xs space-y-4">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400">Official Fee Structure</h3>
-
-                    <div class="space-y-2.5 text-xs text-gray-600 border-b border-gray-100 pb-4">
-                        <div class="flex justify-between">
-                            <span>Base Academy Fee:</span>
-                            <span class="font-mono font-medium">₹ {{ number_format($originalPrice, 2) }}</span>
-                        </div>
-
-                        @if($baseDiscount > 0)
-                            <div class="flex justify-between text-emerald-700 font-medium">
-                                <span>Cadet Concession:</span>
-                                <span class="font-mono">-₹ {{ number_format($baseDiscount, 2) }}</span>
-                            </div>
-                        @endif
-
-                        <!-- Live Coupon Discount Row -->
-                        <div x-show="appliedCoupon" style="display:none;" class="flex justify-between text-emerald-700 font-bold bg-emerald-50/70 p-2 rounded-lg border border-emerald-100">
-                            <div>
-                                <span class="block">Promo (<span x-text="appliedCoupon?.code"></span>):</span>
-                                <span class="text-[10px] text-emerald-600 font-normal" x-text="appliedCoupon?.label"></span>
-                            </div>
-                            <span class="font-mono">-<span x-text="appliedCoupon?.formatted_discount"></span></span>
-                        </div>
-
-                        <div class="flex justify-between text-gray-500">
-                            <span>Educational GST (SAC 999293):</span>
-                            <span class="font-mono text-emerald-700 font-medium">₹ 0.00 (Exempt)</span>
-                        </div>
-
-                        <div class="flex justify-between text-gray-500">
-                            <span>Payment Gateway Surcharge:</span>
-                            <span class="font-mono text-emerald-700 font-medium">₹ 0.00 (Waived)</span>
+                            <p class="text-center text-[11px] text-slate-500 mt-2">
+                                Instant access unlocked immediately upon payment confirmation.
+                            </p>
                         </div>
                     </div>
 
-                    <!-- Total Amount Payable -->
-                    <div class="flex items-baseline justify-between pt-1">
-                        <div>
-                            <span class="text-xs font-bold text-gray-800 uppercase tracking-wide block">Total Payable:</span>
-                            <span class="text-[11px] text-gray-400">All taxes &amp; LMS access included</span>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-2xl sm:text-3xl font-black text-gray-900 font-mono">
-                                ₹ <span x-text="finalPayable.toFixed(2)">{{ number_format($price, 2) }}</span>
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Total Savings Tag -->
-                    <div class="p-2.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-100 text-xs font-semibold flex items-center justify-between">
-                        <span class="flex items-center space-x-1.5">
-                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            <span>Total Savings on this enrollment:</span>
-                        </span>
-                        <span class="font-mono font-bold">₹ <span x-text="totalSavings.toFixed(2)">{{ number_format($baseDiscount, 2) }}</span></span>
-                    </div>
                 </div>
 
-                <!-- Interactive Dynamic Coupon Engine -->
-                <div class="bg-white rounded-2xl p-5 sm:p-6 border border-gray-200 shadow-2xs space-y-4">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-gray-900">Scholarship &amp; Promo Code</h3>
-                        <span class="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">Active Offers</span>
+                <!-- Right Column: High-Converting Order Summary & Quick Coupons (5 Cols) -->
+                <div class="lg:col-span-5 space-y-4">
+                    
+                    <!-- Course / Test Summary Box -->
+                    <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-extrabold uppercase tracking-wider text-blue-950 bg-blue-50 px-2 py-0.5 rounded border border-blue-200/60">
+                                {{ $item->examCategory ? $item->examCategory->name : 'Defence Exam' }}
+                            </span>
+                            <span class="text-[11px] font-bold text-emerald-700">★ 4.9/5 Rating</span>
+                        </div>
+
+                        <h3 class="text-sm sm:text-base font-bold text-slate-900 leading-snug">{{ $item->title }}</h3>
+
+                        <!-- Key Benefits List -->
+                        <div class="pt-2 border-t border-slate-100 space-y-1.5 text-xs text-slate-600">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <span>Full syllabus lessons, tests &amp; downloadable notes</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <span>Learn on Mobile, Tablet &amp; Laptop anytime</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <span>Official GST Tax Invoice provided instantly</span>
+                            </div>
+                        </div>
+
+                        <!-- Price Breakdown -->
+                        <div class="pt-3 border-t border-slate-100 space-y-2 text-xs">
+                            <div class="flex justify-between text-slate-600">
+                                <span>Regular Price:</span>
+                                <span class="font-mono line-through text-slate-400">₹{{ number_format($originalPrice, 2) }}</span>
+                            </div>
+
+                            @if($baseDiscount > 0)
+                                <div class="flex justify-between text-emerald-700 font-semibold">
+                                    <span>Special Discount:</span>
+                                    <span class="font-mono">-₹{{ number_format($baseDiscount, 2) }}</span>
+                                </div>
+                            @endif
+
+                            <!-- Applied Coupon Row -->
+                            <div x-show="appliedCoupon" style="display:none;" 
+                                 class="flex justify-between items-center text-emerald-700 font-bold bg-emerald-50 p-2 rounded-lg border border-emerald-200">
+                                <div>
+                                    <span class="block">Promo (<span x-text="appliedCoupon?.code"></span>):</span>
+                                    <span class="text-[10px] font-normal text-emerald-600" x-text="appliedCoupon?.label"></span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="font-mono block">-<span x-text="appliedCoupon?.formatted_discount"></span></span>
+                                    <button type="button" @click="removeCoupon()" class="text-[10px] text-red-600 underline font-semibold">Remove</button>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between text-slate-500 text-[11px]">
+                                <span>Taxes &amp; Surcharge:</span>
+                                <span class="text-emerald-700 font-bold">₹0.00 (Exempt)</span>
+                            </div>
+
+                            <!-- Net Total -->
+                            <div class="pt-2 border-t border-slate-200 flex items-baseline justify-between">
+                                <span class="text-xs font-bold text-slate-900 uppercase">Total Amount:</span>
+                                <span class="text-xl sm:text-2xl font-extrabold text-slate-900 font-mono">
+                                    ₹<span x-text="finalPayable.toFixed(2)">{{ number_format($price, 2) }}</span>
+                                </span>
+                            </div>
+
+                            <!-- Total Savings Badge -->
+                            <div class="bg-emerald-50 text-emerald-800 text-[11px] font-bold p-2 rounded-lg text-center border border-emerald-200">
+                                🎉 You are saving ₹<span x-text="totalSavings.toFixed(2)">{{ number_format($baseDiscount, 2) }}</span> on this enrollment!
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Coupon Input & Apply Button -->
-                    <div class="space-y-2">
+                    <!-- Clean 1-Tap Coupon Box -->
+                    <div class="bg-white rounded-xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold uppercase tracking-wide text-slate-900">Have a Promo / Scholarship Code?</span>
+                        </div>
+
                         <div class="flex gap-2">
-                            <input type="text" 
-                                   x-model="couponInput" 
-                                   @keyup.enter="applyCoupon()"
-                                   placeholder="Enter Coupon (e.g. AGNIVEER50)" 
-                                   class="flex-1 text-xs font-mono font-bold uppercase px-3.5 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none">
-                            <button type="button" 
-                                    @click="applyCoupon()"
-                                    :disabled="couponLoading"
-                                    class="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 disabled:opacity-60 transition shadow-2xs">
+                            <input type="text" x-model="couponInput" @keyup.enter="applyCoupon()" placeholder="Enter Code (e.g. AGNIVEER50)"
+                                   class="flex-1 text-xs font-mono uppercase font-bold px-3 py-2 rounded-lg border border-slate-300 outline-none focus:ring-1 focus:ring-blue-950">
+                            <button type="button" @click="applyCoupon()" :disabled="couponLoading"
+                                    class="px-4 py-2 rounded-lg text-xs font-bold text-white bg-blue-950 hover:bg-blue-900 transition-colors disabled:opacity-50">
                                 <span x-show="!couponLoading">Apply</span>
                                 <span x-show="couponLoading" style="display:none;">...</span>
                             </button>
                         </div>
 
-                        <!-- Feedback Messages -->
                         <div x-show="couponError" style="display:none;" class="text-xs text-red-600 font-medium" x-text="couponError"></div>
-                        <div x-show="couponSuccess" style="display:none;" class="text-xs text-emerald-700 font-medium flex items-center justify-between">
-                            <span x-text="couponSuccess"></span>
-                            <button type="button" @click="removeCoupon()" class="text-xs text-red-600 underline font-bold ml-2">Remove</button>
-                        </div>
-                    </div>
+                        <div x-show="couponSuccess" style="display:none;" class="text-xs text-emerald-700 font-medium" x-text="couponSuccess"></div>
 
-                    <!-- Quick Tap Suggested Promo Badges (Dynamic from Admin DB) -->
-                    <div class="pt-2 border-t border-gray-100">
-                        <span class="text-[11px] font-semibold text-gray-500 block mb-2">Available Defence Scholarships:</span>
-                        <div class="space-y-1.5">
-                            @if(isset($activeCoupons) && $activeCoupons->count() > 0)
-                                @foreach($activeCoupons as $ac)
-                                    <button type="button" 
-                                            @click="applyCoupon('{{ $ac->code }}')"
-                                            class="w-full flex items-center justify-between p-2 rounded-lg border border-dashed border-blue-300 bg-blue-50/40 hover:bg-blue-50 text-left transition">
-                                        <div>
-                                            <span class="text-xs font-mono font-bold text-blue-800">{{ $ac->code }}</span>
-                                            <span class="text-[10px] text-gray-500 block truncate max-w-xs">
-                                                {{ $ac->name ?: ($ac->type === 'percent' ? number_format($ac->value, 0) . '% Off' : '₹' . number_format($ac->value, 2) . ' Flat Concession') }}
-                                            </span>
-                                        </div>
-                                        <span class="text-[10px] font-bold text-blue-700 shrink-0">TAP TO APPLY</span>
+                        <!-- 1-Tap Quick Apply Badges -->
+                        <div class="pt-2 border-t border-slate-100">
+                            <span class="text-[11px] text-slate-500 font-medium block mb-1.5">Available Offers:</span>
+                            <div class="flex flex-wrap gap-1.5">
+                                @if(isset($activeCoupons) && $activeCoupons->count() > 0)
+                                    @foreach($activeCoupons as $ac)
+                                        <button type="button" @click="applyCoupon('{{ $ac->code }}')"
+                                                class="px-2.5 py-1 text-[11px] font-mono font-bold bg-blue-50 text-blue-950 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors">
+                                            {{ $ac->code }}
+                                            <span class="font-sans text-[10px] text-blue-700 font-normal">({{ $ac->type === 'percent' ? number_format($ac->value, 0) . '%' : '₹' . number_format($ac->value, 0) }} off)</span>
+                                        </button>
+                                    @endforeach
+                                @else
+                                    <button type="button" @click="applyCoupon('AGNIVEER50')"
+                                            class="px-2.5 py-1 text-[11px] font-mono font-bold bg-blue-50 text-blue-950 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors">
+                                        AGNIVEER50 <span class="font-sans text-[10px] text-blue-700 font-normal">(50% off)</span>
                                     </button>
-                                @endforeach
-                            @else
-                                <button type="button" 
-                                        @click="applyCoupon('AGNIVEER50')"
-                                        class="w-full flex items-center justify-between p-2 rounded-lg border border-dashed border-blue-300 bg-blue-50/40 hover:bg-blue-50 text-left transition">
-                                    <div>
-                                        <span class="text-xs font-mono font-bold text-blue-800">AGNIVEER50</span>
-                                        <span class="text-[10px] text-gray-500 block">50% off for Agniveer candidates</span>
-                                    </div>
-                                    <span class="text-[10px] font-bold text-blue-700">TAP TO APPLY</span>
-                                </button>
-
-                                <button type="button" 
-                                        @click="applyCoupon('OFFICER20')"
-                                        class="w-full flex items-center justify-between p-2 rounded-lg border border-dashed border-gray-300 hover:bg-gray-50 text-left transition">
-                                    <div>
-                                        <span class="text-xs font-mono font-bold text-gray-800">OFFICER20</span>
-                                        <span class="text-[10px] text-gray-500 block">20% merit waiver on batch enrollments</span>
-                                    </div>
-                                    <span class="text-[10px] font-bold text-gray-600">TAP TO APPLY</span>
-                                </button>
-                            @endif
+                                    <button type="button" @click="applyCoupon('OFFICER20')"
+                                            class="px-2.5 py-1 text-[11px] font-mono font-bold bg-slate-100 text-slate-800 border border-slate-200 rounded-md hover:bg-slate-200 transition-colors">
+                                        OFFICER20 <span class="font-sans text-[10px] text-slate-600 font-normal">(20% off)</span>
+                                    </button>
+                                @endif
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Cadet Guarantee & Invoice Notice -->
-                <div class="bg-white rounded-2xl p-5 border border-gray-200 shadow-2xs text-[11px] text-gray-500 space-y-2.5 leading-relaxed">
-                    <div class="flex items-start space-x-2">
-                        <span class="text-emerald-600 font-bold shrink-0">✓</span>
-                        <span>Instant access unlocked immediately on your student dashboard.</span>
+                    <!-- Reassurance Card -->
+                    <div class="p-3.5 bg-slate-100/80 rounded-xl text-center text-xs text-slate-500 space-y-1">
+                        <div class="font-bold text-slate-700">Need Admissions Assistance?</div>
+                        <div class="text-[11px]">Call our academy helpline: <a href="tel:{{ $paymentConfig['offline']['contact_phone'] ?? '+919876543210' }}" class="text-blue-950 font-bold underline">{{ $paymentConfig['offline']['contact_phone'] ?? '+91 98765 43210' }}</a></div>
                     </div>
-                    <div class="flex items-start space-x-2">
-                        <span class="text-emerald-600 font-bold shrink-0">✓</span>
-                        <span>Official GST Tax Invoice (SAC 999293) generated instantly.</span>
-                    </div>
-                    <div class="flex items-start space-x-2">
-                        <span class="text-emerald-600 font-bold shrink-0">✓</span>
-                        <span>Enrollment mapped to registered cadet: <strong class="text-gray-700">{{ $user->email }}</strong></span>
-                    </div>
+
                 </div>
 
             </div>
 
-        </div>
+        </form>
 
     </div>
 
-    <!-- Simulated Bank / NPCI 3DS2 Gateway Processing Modal -->
-    <div x-show="isProcessing" 
-         style="display:none;"
-         class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/70 backdrop-blur-xs p-4"
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100">
-        
-        <div class="bg-white rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-lg border border-gray-100 text-center space-y-5">
-            <div class="w-16 h-16 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center mx-auto text-blue-700">
-                <svg class="animate-spin h-8 w-8 text-blue-700" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+    <!-- Simple, Clean Processing Overlay -->
+    <div x-show="isProcessing" style="display:none;"
+         class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+        <div class="bg-white rounded-2xl p-6 max-w-sm w-full text-center space-y-4 shadow-xl border border-slate-100">
+            <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-950 flex items-center justify-center mx-auto">
+                <svg class="animate-spin h-6 w-6 text-blue-950" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
             </div>
-
             <div>
-                <h3 class="text-base font-bold text-gray-900">Securing Payment Gateway Handshake</h3>
-                <p class="text-xs text-gray-500 mt-1" x-text="processingMessage">Initiating bank handshake...</p>
-            </div>
-
-            <!-- Progress Bar -->
-            <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                <div class="bg-blue-700 h-full transition-all duration-500" :style="'width: ' + processingProgress + '%'"></div>
-            </div>
-
-            <div class="p-3 bg-gray-50 rounded-xl text-[11px] text-gray-500 flex items-center justify-center space-x-2">
-                <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path></svg>
-                <span>Do not close or refresh this window. Bank authorization in progress.</span>
+                <h3 class="text-sm font-bold text-slate-900">Securing Access</h3>
+                <p class="text-xs text-slate-500 mt-1" x-text="processingMessage">Please do not refresh this window...</p>
             </div>
         </div>
-
     </div>
 
 </div>
