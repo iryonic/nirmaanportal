@@ -207,19 +207,21 @@ class MockTestController extends Controller
 
         $test = $attempt->mockTest()->with('questions')->first();
 
-        // Server-side strict integer countdown calculation (fixes any float fractions)
+        // Server-side strict integer countdown calculation
         $durationSeconds = (int) ($test->duration_minutes * 60);
-        $elapsedSeconds = (int) floor(now()->diffInSeconds($attempt->started_at, false));
-        $remainingSeconds = max(0, $durationSeconds - max(0, $elapsedSeconds));
+        $elapsedSeconds = (int) $attempt->started_at->diffInSeconds(now());
+        $remainingSeconds = max(0, $durationSeconds - $elapsedSeconds);
 
         if ($remainingSeconds <= 0) {
             return $this->processSubmission($attempt);
         }
 
+        $endTimestampMs = $attempt->started_at->copy()->addSeconds($durationSeconds)->getTimestamp() * 1000;
+
         $answers = $attempt->answers()->pluck('selected_option', 'question_id')->toArray();
         $reviewFlags = $attempt->answers()->pluck('is_marked_for_review', 'question_id')->toArray();
 
-        return view('student.tests.attempt', compact('attempt', 'test', 'remainingSeconds', 'answers', 'reviewFlags'));
+        return view('student.tests.attempt', compact('attempt', 'test', 'remainingSeconds', 'endTimestampMs', 'answers', 'reviewFlags'));
     }
 
     public function saveAnswer(TestAttempt $attempt, Request $request)

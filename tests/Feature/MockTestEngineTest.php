@@ -241,4 +241,58 @@ class MockTestEngineTest extends TestCase
         $response->assertSee('NIR-20261026-TEST99');
         $response->assertSee('499.00');
     }
+
+    public function test_cbt_timer_is_robust_to_page_reload_and_does_not_reset_to_full_duration(): void
+    {
+        $student = User::factory()->create([
+            'role' => 'student',
+            'is_active' => true,
+        ]);
+
+        $test = MockTest::create([
+            'title' => 'Countdown Verification Drill',
+            'slug' => 'countdown-verification-drill',
+            'duration_minutes' => 60,
+            'total_marks' => 20,
+            'pass_marks' => 10,
+            'is_published' => true,
+        ]);
+
+        $q = Question::create([
+            'question_text' => 'What is 10 + 15?',
+            'option_a' => '20',
+            'option_b' => '25',
+            'option_c' => '30',
+            'option_d' => '35',
+            'correct_option' => 'B',
+            'subject' => 'Mathematics',
+            'marks' => 4.0,
+            'negative_marks' => 1.0,
+            'is_active' => true,
+        ]);
+        $test->questions()->attach($q->id, ['sort_order' => 1]);
+
+        // Create attempt started 15 minutes ago
+        $startedAt = now()->subMinutes(15);
+        $attempt = TestAttempt::create([
+            'mock_test_id' => $test->id,
+            'user_id' => $student->id,
+            'started_at' => $startedAt,
+            'status' => 'in_progress',
+        ]);
+
+        // Reload the attempt page as the student
+        $response = $this->actingAs($student)->get(route('student.tests.attempt', $attempt));
+
+        $response->assertStatus(200);
+        
+        // Assert remaining seconds is ~45 minutes (approx 2700s), definitely NOT 3600 (60 minutes)
+        $viewRemaining = $response->viewData('remainingSeconds');
+        $this->assertLessThanOrEqual(2705, $viewRemaining);
+        $this->assertGreaterThanOrEqual(2690, $viewRemaining);
+
+        // Assert endTimestampMs is provided for client synchronization
+        $this->assertNotNull($response->viewData('endTimestampMs'));
+    }
 }
+

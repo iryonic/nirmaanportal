@@ -2,9 +2,9 @@
 <html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $test->title }} — CBT Engine | Nirmaan</title>
+    <title>{{ $test->title }} — CBT Engine | Nirmaan Defence Platform</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,7 +15,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
-        /* Minimalist scrollbar for palette */
+        /* Sleek minimalist scrollbar */
         .custom-scrollbar::-webkit-scrollbar {
             width: 4px;
         }
@@ -32,11 +32,12 @@
         }
     </style>
 </head>
-<body class="bg-[#F8FAFC] text-gray-900 h-full flex flex-col font-sans select-none"
+<body class="bg-slate-50/80 text-slate-800 min-h-full flex flex-col font-sans select-none antialiased"
       x-data="testEngine({
           attemptId: {{ $attempt->id }},
           totalQuestions: {{ $test->questions->count() }},
           initialRemainingSeconds: {{ (int) floor($remainingSeconds) }},
+          endTimestampMs: {{ $endTimestampMs ?? ($attempt->started_at->addSeconds($test->duration_minutes * 60)->getTimestamp() * 1000) }},
           questions: {{ json_encode($test->questions->values()->map(fn($q) => [
               'id' => $q->id,
               'subject' => $q->subject,
@@ -47,6 +48,7 @@
               'option_c' => $q->option_c,
               'option_d' => $q->option_d,
               'marks' => $q->marks,
+              'negative_marks' => $q->negative_marks,
           ])) }},
           initialAnswers: {{ json_encode($answers) }},
           initialReviews: {{ json_encode($reviewFlags) }},
@@ -55,110 +57,143 @@
           csrfToken: '{{ csrf_token() }}'
       })">
 
-    <!-- Top Examination Bar -->
-    <header class="bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-30 shadow-2xs">
-        <div class="max-w-7xl mx-auto flex items-center justify-between">
+    <!-- Top Examination Command Bar -->
+    <header class="bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 py-2.5 sm:py-3 sticky top-0 z-30 shadow-2xs">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
             
-            <!-- Left Test Info -->
-            <div class="flex items-center space-x-3 truncate mr-4">
-                <span class="w-8 h-8 rounded-lg bg-blue-700 text-white font-black text-xs flex items-center justify-center flex-shrink-0">
+            <!-- Left: Test Identity & Cadet Meta -->
+            <div class="flex items-center space-x-3 min-w-0 mr-2">
+                <div class="w-9 h-9 rounded-xl bg-blue-950 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-2xs ring-1 ring-blue-900">
                     CBT
-                </span>
-                <div class="truncate">
-                    <h1 class="text-xs sm:text-sm font-bold text-gray-900 truncate">{{ $test->title }}</h1>
-                    <span class="text-[11px] text-gray-500 font-medium">Single Correct Objective • Computer Based Test</span>
+                </div>
+                <div class="min-w-0">
+                    <div class="flex items-center space-x-1.5 text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">
+                        <span>Candidate Assessment Hall</span>
+                        <span>•</span>
+                        <span class="text-blue-950">Defence Paper</span>
+                    </div>
+                    <h1 class="text-xs sm:text-sm font-black text-slate-900 truncate tracking-tight">{{ $test->title }}</h1>
                 </div>
             </div>
 
-            <!-- Right: Timer, Mobile Palette Toggle & Submit CTA -->
-            <div class="flex items-center space-x-2.5 sm:space-x-3 flex-shrink-0">
-                <!-- Clean Solid Timer Pill (Zero decimals, strict integer MM:SS) -->
-                <div class="flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold tracking-wider transition-colors"
-                     :class="remainingSeconds < 300 ? 'bg-red-700 text-white' : 'bg-slate-900 text-white'">
-                    <svg class="w-3.5 h-3.5" :class="remainingSeconds < 300 ? 'text-white' : 'text-red-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <!-- Right: Stopwatch HUD, Progress & Actions -->
+            <div class="flex items-center space-x-2 sm:space-x-3 shrink-0">
+                
+                <!-- Resilient Defense Stopwatch HUD -->
+                <div class="flex items-center space-x-2 px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold tracking-wider transition-colors shadow-2xs"
+                     :class="remainingSeconds < 300 
+                        ? 'bg-rose-950 text-rose-200 border border-rose-500/50 animate-pulse' 
+                        : 'bg-slate-900 text-white border border-slate-800'">
+                    <span class="w-2 h-2 rounded-full"
+                          :class="remainingSeconds < 300 ? 'bg-rose-500 animate-ping' : 'bg-emerald-400'"></span>
+                    <svg class="w-3.5 h-3.5" :class="remainingSeconds < 300 ? 'text-rose-400' : 'text-slate-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    <span x-text="formatTime(remainingSeconds)">00:00</span>
+                    <span x-text="formatTime(remainingSeconds)" class="text-xs sm:text-sm font-black">00:00</span>
                 </div>
 
-                <!-- Mobile Palette Trigger -->
-                <button type="button" @click="showPaletteModal = true" class="lg:hidden px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold flex items-center space-x-1.5 transition" title="Question Palette">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                <!-- Answered Counter Chip (Hidden on very small phones) -->
+                <div class="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    <span>Answered: <strong class="text-slate-900 font-bold" x-text="getAnsweredCount()"></strong>/<span x-text="totalQuestions"></span></span>
+                </div>
+
+                <!-- Mobile Palette Toggle -->
+                <button type="button" @click="showPaletteModal = true" 
+                        class="lg:hidden px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center space-x-1.5 border border-slate-200 transition-colors shadow-2xs" 
+                        title="Question Palette">
+                    <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                     <span>Palette</span>
                     <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 font-bold" x-text="getAnsweredCount()"></span>
                 </button>
 
-                <!-- Submit Button -->
-                <button type="button" @click="confirmSubmitModal = true" class="px-4 py-1.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition">
-                    Submit Exam
+                <!-- Final Submit Exam Button -->
+                <button type="button" @click="confirmSubmitModal = true" 
+                        class="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-2xs flex items-center space-x-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span>Submit Exam</span>
                 </button>
             </div>
 
         </div>
     </header>
 
-    <!-- Main Workspace -->
-    <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden">
+    <!-- Main CBT Examination Workspace -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-3 sm:p-5 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5 overflow-hidden">
         
-        <!-- Left: Current Question Area -->
-        <div class="lg:col-span-8 flex flex-col justify-between bg-white rounded-2xl p-6 sm:p-8 border border-gray-200 shadow-2xs overflow-y-auto">
+        <!-- Left: Question Workspace & Options Card (lg:col-span-8) -->
+        <div class="lg:col-span-8 flex flex-col justify-between bg-white rounded-2xl p-5 sm:p-7 border border-slate-200/90 shadow-2xs overflow-y-auto min-h-[580px]">
             
             <div>
                 <!-- Question Meta Strip -->
-                <div class="flex items-center justify-between pb-4 border-b border-gray-200 mb-6">
+                <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
                     <div class="flex items-center space-x-2">
-                        <span class="text-sm font-extrabold text-blue-700" x-text="'Question ' + (currentIndex + 1) + ' of ' + totalQuestions"></span>
-                        <span class="text-gray-300">•</span>
-                        <span class="text-xs font-semibold text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded-md" x-text="currentQuestion.subject"></span>
+                        <span class="text-xs sm:text-sm font-black text-blue-950 tracking-tight" x-text="'Question ' + (currentIndex + 1) + ' of ' + totalQuestions"></span>
+                        <span class="text-slate-300">•</span>
+                        <span class="text-xs font-semibold text-slate-700 bg-slate-100 border border-slate-200/80 px-2.5 py-0.5 rounded-lg" x-text="currentQuestion.subject || 'General'"></span>
+                        <template x-if="currentQuestion.topic">
+                            <span class="hidden sm:inline-block text-xs font-medium text-slate-500 bg-slate-50 border border-slate-200/60 px-2 py-0.5 rounded-md" x-text="currentQuestion.topic"></span>
+                        </template>
                     </div>
 
                     <div class="flex items-center space-x-2 text-xs font-bold">
-                        <span class="text-emerald-700" x-text="'+' + currentQuestion.marks + ' Marks'"></span>
-                        <span class="text-gray-300">•</span>
-                        <span class="text-red-600">-0.25 Neg</span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200" x-text="'+' + Number(currentQuestion.marks || 4).toFixed(2) + ' Marks'"></span>
+                        <span class="text-slate-300">•</span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200" x-text="'-' + Number(currentQuestion.negative_marks || 0.25).toFixed(2) + ' Neg'"></span>
                     </div>
                 </div>
 
-                <!-- Question Text -->
-                <div class="text-base sm:text-lg font-bold text-gray-900 leading-relaxed mb-6" x-text="currentQuestion.text"></div>
+                <!-- Question Prompt -->
+                <div class="text-base sm:text-lg font-bold text-slate-900 leading-relaxed tracking-tight py-2 mb-6 select-text" x-text="currentQuestion.text"></div>
 
-                <!-- Answer Options (Clean Solid Cards with Distinct Radio Badges) -->
+                <!-- Answer Options (Linear / Lenskart Style Interactive Radio Cards) -->
                 <div class="space-y-3 mb-6">
                     <template x-for="opt in ['A', 'B', 'C', 'D']" :key="opt">
                         <button type="button"
                                 @click="selectOption(opt)"
                                 :class="answers[currentQuestion.id] === opt 
-                                    ? 'border-blue-600 bg-blue-50/70 text-blue-900 font-bold ring-1 ring-blue-600' 
-                                    : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-800 font-medium'"
-                                class="w-full p-4 rounded-xl border text-left flex items-center space-x-3.5 text-xs sm:text-sm transition">
+                                    ? 'border-2 border-blue-950 bg-blue-50/60 text-slate-950 font-semibold ring-2 ring-blue-950/10 shadow-xs' 
+                                    : 'border border-slate-200/90 bg-white hover:bg-slate-50/80 hover:border-slate-300 text-slate-800 font-medium shadow-2xs'"
+                                class="w-full p-3.5 sm:p-4 rounded-xl text-left flex items-center space-x-3.5 text-xs sm:text-sm transition-all cursor-pointer group">
+                            
+                            <!-- Letter Badge Pill -->
                             <span :class="answers[currentQuestion.id] === opt 
-                                ? 'bg-blue-700 text-white' 
-                                : 'bg-gray-100 text-gray-700 border border-gray-300'" 
-                                class="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0 transition">
+                                ? 'bg-blue-950 text-white font-black shadow-xs' 
+                                : 'bg-slate-100 group-hover:bg-slate-200 text-slate-700 border border-slate-200 font-bold'" 
+                                class="w-8 h-8 rounded-lg flex items-center justify-center text-xs shrink-0 transition-colors">
                                 <span x-text="opt"></span>
                             </span>
-                            <span class="flex-grow" x-text="currentQuestion['option_' + opt.toLowerCase()]"></span>
+
+                            <!-- Option Text -->
+                            <span class="flex-grow select-text leading-relaxed" x-text="currentQuestion['option_' + opt.toLowerCase()]"></span>
+
+                            <!-- Active Check Indicator -->
+                            <template x-if="answers[currentQuestion.id] === opt">
+                                <span class="w-5 h-5 rounded-full bg-blue-950 text-white flex items-center justify-center shrink-0">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                </span>
+                            </template>
                         </button>
                     </template>
                 </div>
             </div>
 
             <!-- Bottom Question Controls -->
-            <div class="pt-6 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3">
+            <div class="pt-5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
                 <div class="flex items-center space-x-2">
                     <button type="button" 
                             @click="clearResponse()" 
                             :disabled="!answers[currentQuestion.id]" 
-                            class="px-3.5 py-2 rounded-lg text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 disabled:opacity-40 transition">
+                            class="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 disabled:opacity-40 transition-colors shadow-2xs">
                         Clear Response
                     </button>
                     <button type="button" 
                             @click="toggleReview()" 
-                            class="px-3.5 py-2 rounded-lg text-xs font-semibold transition" 
+                            class="px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shadow-2xs" 
                             :class="reviews[currentQuestion.id] 
-                                ? 'bg-purple-700 text-white font-bold' 
-                                : 'text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200'">
-                        <span x-text="reviews[currentQuestion.id] ? 'Marked for Review ★' : 'Mark for Review'"></span>
+                                ? 'bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-xs' 
+                                : 'text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200'">
+                        <span x-text="reviews[currentQuestion.id] ? '★ Marked for Review' : 'Mark for Review'"></span>
                     </button>
                 </div>
 
@@ -166,12 +201,12 @@
                     <button type="button" 
                             @click="prevQuestion()" 
                             :disabled="currentIndex === 0" 
-                            class="px-4 py-2 rounded-lg text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-30 transition">
+                            class="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 disabled:opacity-30 transition-colors shadow-2xs">
                         ← Previous
                     </button>
                     <button type="button" 
                             @click="saveAndNext()" 
-                            class="px-5 py-2 rounded-lg text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 transition">
+                            class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-blue-950 hover:bg-blue-900 shadow-2xs transition-all">
                         <span x-text="currentIndex < totalQuestions - 1 ? 'Save & Next →' : 'Save Response'"></span>
                     </button>
                 </div>
@@ -179,87 +214,86 @@
 
         </div>
 
-        <!-- Right: Industry-Standard Question Palette Sidebar (Desktop) -->
-        <div class="hidden lg:flex lg:col-span-4 flex-col bg-white rounded-2xl p-5 border border-gray-200 shadow-2xs overflow-hidden h-[calc(100vh-6.5rem)] sticky top-20">
+        <!-- Right: Modern Question Palette Sidebar (Desktop lg:col-span-4) -->
+        <div class="hidden lg:flex lg:col-span-4 flex-col bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs overflow-hidden h-[calc(100vh-6.5rem)] sticky top-20">
             
             <!-- Palette Header & Progress -->
-            <div class="pb-3 border-b border-gray-100 flex-shrink-0">
+            <div class="pb-3 border-b border-slate-100 shrink-0">
                 <div class="flex items-center justify-between">
-                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-gray-500">Question Palette</h3>
-                    <span class="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100" x-text="totalQuestions + ' Total Questions'"></span>
+                    <h3 class="text-xs font-black uppercase tracking-wider text-slate-500">Question Palette</h3>
+                    <span class="text-[11px] font-bold text-blue-950 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100 font-mono" x-text="totalQuestions + ' Total Questions'"></span>
                 </div>
                 
-                <!-- Progress Bar -->
-                <div class="mt-2.5">
-                    <div class="flex items-center justify-between text-[10px] text-gray-500 font-medium">
-                        <span>Answered: <strong class="text-emerald-700" x-text="getAnsweredCount()"></strong> of <span x-text="totalQuestions"></span></span>
-                        <span class="font-bold text-gray-700" x-text="Math.round((getAnsweredCount() / Math.max(1, totalQuestions)) * 100) + '%'"></span>
+                <!-- Live Progress Bar -->
+                <div class="mt-3">
+                    <div class="flex items-center justify-between text-[11px] text-slate-500 font-medium mb-1">
+                        <span>Answered: <strong class="text-emerald-700 font-bold" x-text="getAnsweredCount()"></strong> of <span x-text="totalQuestions"></span></span>
+                        <span class="font-bold text-slate-800" x-text="Math.round((getAnsweredCount() / Math.max(1, totalQuestions)) * 100) + '%'"></span>
                     </div>
-                    <div class="w-full bg-gray-100 rounded-full h-1.5 mt-1 overflow-hidden">
-                        <div class="bg-emerald-600 h-1.5 rounded-full transition-all duration-300" :style="'width: ' + ((getAnsweredCount() / Math.max(1, totalQuestions)) * 100) + '%'"></div>
+                    <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200/60">
+                        <div class="bg-emerald-600 h-2 rounded-full transition-all duration-300" :style="'width: ' + ((getAnsweredCount() / Math.max(1, totalQuestions)) * 100) + '%'"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Legend with Standard CBT States and Live Counts -->
-            <div class="grid grid-cols-2 gap-2 text-[11px] font-medium text-gray-700 my-3 bg-gray-50 p-2.5 rounded-xl border border-gray-200 flex-shrink-0">
-                <div class="flex items-center justify-between bg-white px-2 py-1 rounded-md border border-gray-200">
+            <!-- Legend with CBT Status Badges and Live Counts -->
+            <div class="grid grid-cols-2 gap-2 text-[11px] font-medium text-slate-700 my-3 bg-slate-50/80 p-2.5 rounded-xl border border-slate-200/80 shrink-0">
+                <div class="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 shadow-2xs">
                     <div class="flex items-center space-x-1.5 truncate mr-1">
-                        <span class="w-2.5 h-2.5 rounded-xs bg-emerald-600 flex-shrink-0"></span>
-                        <span class="truncate">Answered</span>
+                        <span class="w-2.5 h-2.5 rounded-sm bg-emerald-600 shrink-0"></span>
+                        <span class="truncate text-[11px]">Answered</span>
                     </div>
-                    <strong class="text-emerald-700 text-[10px] font-bold" x-text="getAnsweredCount()"></strong>
+                    <strong class="text-emerald-700 text-xs font-bold" x-text="getAnsweredCount()"></strong>
                 </div>
 
-                <div class="flex items-center justify-between bg-white px-2 py-1 rounded-md border border-gray-200">
+                <div class="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 shadow-2xs">
                     <div class="flex items-center space-x-1.5 truncate mr-1">
-                        <span class="w-2.5 h-2.5 rounded-xs bg-purple-700 flex-shrink-0"></span>
-                        <span class="truncate">Review</span>
+                        <span class="w-2.5 h-2.5 rounded-sm bg-amber-500 shrink-0"></span>
+                        <span class="truncate text-[11px]">Review</span>
                     </div>
-                    <strong class="text-purple-700 text-[10px] font-bold" x-text="getReviewCount()"></strong>
+                    <strong class="text-amber-700 text-xs font-bold" x-text="getReviewCount()"></strong>
                 </div>
 
-                <div class="flex items-center justify-between bg-white px-2 py-1 rounded-md border border-gray-200">
+                <div class="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 shadow-2xs">
                     <div class="flex items-center space-x-1.5 truncate mr-1">
-                        <span class="w-2.5 h-2.5 rounded-xs bg-gray-200 border border-gray-400 flex-shrink-0"></span>
-                        <span class="truncate">Unanswered</span>
+                        <span class="w-2.5 h-2.5 rounded-sm bg-slate-200 border border-slate-400 shrink-0"></span>
+                        <span class="truncate text-[11px]">Unanswered</span>
                     </div>
-                    <strong class="text-gray-700 text-[10px] font-bold" x-text="totalQuestions - getAnsweredCount()"></strong>
+                    <strong class="text-slate-700 text-xs font-bold" x-text="totalQuestions - getAnsweredCount()"></strong>
                 </div>
 
-                <div class="flex items-center justify-between bg-white px-2 py-1 rounded-md border border-gray-200">
+                <div class="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 shadow-2xs">
                     <div class="flex items-center space-x-1.5 truncate mr-1">
-                        <span class="w-2.5 h-2.5 rounded-xs border-2 border-blue-700 bg-white flex-shrink-0"></span>
-                        <span class="truncate">Current</span>
+                        <span class="w-2.5 h-2.5 rounded-sm border-2 border-blue-950 bg-white shrink-0"></span>
+                        <span class="truncate text-[11px]">Current</span>
                     </div>
-                    <span class="text-blue-700 text-[10px] font-bold" x-text="'Q' + (currentIndex + 1)"></span>
+                    <span class="text-blue-950 text-xs font-bold" x-text="'Q' + (currentIndex + 1)"></span>
                 </div>
             </div>
 
-            <!-- Numbers Grid (Packs tightly at top using content-start, never stretches rows!) -->
-            <div class="flex-grow overflow-y-auto pr-1 my-1 custom-scrollbar min-h-0">
+            <!-- Numbers Grid (Packs tightly at top using content-start, never stretches rows) -->
+            <div class="flex-grow overflow-y-auto p-1 custom-scrollbar min-h-0">
                 <div class="grid grid-cols-5 gap-2 content-start">
                     <template x-for="(q, idx) in questions" :key="q.id">
                         <button type="button"
                                 @click="goToQuestion(idx)"
                                 :class="{
-                                    'ring-2 ring-blue-700 ring-offset-2 font-black': currentIndex === idx,
-                                    'bg-purple-700 text-white font-bold': reviews[q.id],
-                                    'bg-emerald-600 text-white font-bold': !reviews[q.id] && answers[q.id],
-                                    'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200 font-semibold': !reviews[q.id] && !answers[q.id]
+                                    'ring-2 ring-blue-950 ring-offset-2 font-black': currentIndex === idx,
+                                    'bg-amber-500 text-white font-bold shadow-2xs': reviews[q.id],
+                                    'bg-emerald-600 text-white font-bold shadow-2xs': !reviews[q.id] && answers[q.id],
+                                    'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200 font-semibold': !reviews[q.id] && !answers[q.id]
                                 }"
-                                class="h-9 rounded-lg text-xs flex items-center justify-center transition shadow-2xs">
+                                class="h-9 sm:h-10 rounded-xl text-xs flex items-center justify-center transition-all cursor-pointer">
                             <span x-text="idx + 1"></span>
                         </button>
                     </template>
                 </div>
             </div>
 
-            <!-- Submit Final Test CTA -->
-            <div class="pt-3 border-t border-gray-200 mt-2 flex-shrink-0">
-                <button type="button" @click="confirmSubmitModal = true" class="w-full py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition flex items-center justify-center space-x-1.5 shadow-xs">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                    <span>Submit Final Test</span>
+            <!-- Bottom Finish CTA -->
+            <div class="pt-3 border-t border-slate-100 mt-2 shrink-0">
+                <button type="button" @click="confirmSubmitModal = true" class="w-full py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-2xs transition-colors">
+                    Finish &amp; Score Examination
                 </button>
             </div>
         </div>
@@ -267,55 +301,47 @@
     </main>
 
     <!-- Mobile Palette Modal / Drawer -->
-    <div x-show="showPaletteModal" class="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4" style="display:none;">
-        <div @click.away="showPaletteModal = false" class="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl p-5 max-h-[85vh] flex flex-col border border-gray-200 shadow-xl">
-            <div class="flex items-center justify-between pb-3 border-b border-gray-200 mb-3 flex-shrink-0">
-                <div>
-                    <h3 class="text-sm font-bold text-gray-900">Question Palette</h3>
-                    <p class="text-[11px] text-gray-500">Tap any question number to jump directly</p>
-                </div>
-                <button @click="showPaletteModal = false" class="text-gray-400 hover:text-gray-700 text-sm font-bold p-1.5 rounded-lg bg-gray-100">✕</button>
-            </div>
-            
-            <!-- Mobile Legend with Live Counts -->
-            <div class="grid grid-cols-2 gap-2 text-[11px] font-medium text-gray-700 mb-3 bg-gray-50 p-2.5 rounded-xl border border-gray-200 flex-shrink-0">
-                <div class="flex items-center justify-between bg-white px-2 py-1 rounded-md border border-gray-200">
-                    <div class="flex items-center space-x-1.5">
-                        <span class="w-2.5 h-2.5 rounded-xs bg-emerald-600"></span>
-                        <span>Answered</span>
-                    </div>
-                    <strong class="text-emerald-700 text-[10px]" x-text="getAnsweredCount()"></strong>
-                </div>
-                <div class="flex items-center justify-between bg-white px-2 py-1 rounded-md border border-gray-200">
-                    <div class="flex items-center space-x-1.5">
-                        <span class="w-2.5 h-2.5 rounded-xs bg-purple-700"></span>
-                        <span>Review</span>
-                    </div>
-                    <strong class="text-purple-700 text-[10px]" x-text="getReviewCount()"></strong>
-                </div>
+    <div x-show="showPaletteModal" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex flex-col justify-end lg:hidden" style="display:none;">
+        
+        <div @click.away="showPaletteModal = false" class="bg-white rounded-t-3xl p-5 max-h-[85vh] flex flex-col shadow-2xl border-t border-slate-200">
+            <!-- Drawer Drag Handle -->
+            <div class="w-10 h-1 bg-slate-300 rounded-full mx-auto mb-3"></div>
+
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
+                <h3 class="text-sm font-black text-slate-900">Question Palette</h3>
+                <button type="button" @click="showPaletteModal = false" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
             </div>
 
-            <!-- Numbers Grid (Packs tightly using content-start) -->
-            <div class="overflow-y-auto py-2 custom-scrollbar flex-grow min-h-0">
+            <!-- Scrollable Number Grid -->
+            <div class="flex-grow overflow-y-auto py-3 custom-scrollbar">
                 <div class="grid grid-cols-5 gap-2 content-start">
                     <template x-for="(q, idx) in questions" :key="q.id">
                         <button type="button"
                                 @click="goToQuestion(idx); showPaletteModal = false"
                                 :class="{
-                                    'ring-2 ring-blue-700 ring-offset-1 font-black': currentIndex === idx,
-                                    'bg-purple-700 text-white font-bold': reviews[q.id],
+                                    'ring-2 ring-blue-950 ring-offset-2 font-black': currentIndex === idx,
+                                    'bg-amber-500 text-white font-bold': reviews[q.id],
                                     'bg-emerald-600 text-white font-bold': !reviews[q.id] && answers[q.id],
-                                    'bg-gray-100 text-gray-700 border border-gray-200': !reviews[q.id] && !answers[q.id]
+                                    'bg-slate-100 text-slate-700 border border-slate-200': !reviews[q.id] && !answers[q.id]
                                 }"
-                                class="h-10 rounded-xl text-xs flex items-center justify-center transition">
+                                class="h-10 rounded-xl text-xs flex items-center justify-center transition-colors">
                             <span x-text="idx + 1"></span>
                         </button>
                     </template>
                 </div>
             </div>
 
-            <div class="pt-3 border-t border-gray-200 mt-2 flex-shrink-0">
-                <button type="button" @click="showPaletteModal = false; confirmSubmitModal = true" class="w-full py-3 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition">
+            <div class="pt-3 border-t border-slate-100 shrink-0">
+                <button type="button" @click="showPaletteModal = false; confirmSubmitModal = true" class="w-full py-3 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-2xs transition-colors">
                     Finish &amp; Submit Test
                 </button>
             </div>
@@ -323,48 +349,56 @@
     </div>
 
     <!-- Confirmation Modal before Submit -->
-    <div x-show="confirmSubmitModal" class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" style="display:none;">
-        <div @click.away="confirmSubmitModal = false" class="bg-white w-full max-w-sm rounded-2xl p-6 sm:p-7 text-center space-y-4 border border-gray-200 shadow-xl">
-            <div class="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto text-xl font-bold">
+    <div x-show="confirmSubmitModal" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4" style="display:none;">
+        
+        <div @click.away="confirmSubmitModal = false" class="bg-white w-full max-w-sm rounded-2xl p-6 sm:p-7 text-center space-y-4 border border-slate-200/90 shadow-2xl">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center mx-auto text-xl font-bold shadow-2xs">
                 ✓
             </div>
             <div>
-                <h3 class="text-base font-bold text-gray-900">Confirm Exam Submission</h3>
-                <p class="text-xs text-gray-500 mt-1">Review your response counts before locking your answers.</p>
+                <h3 class="text-base font-black text-slate-900 tracking-tight">Confirm Exam Submission</h3>
+                <p class="text-xs text-slate-500 mt-1">Review your response summary before locking your test paper.</p>
             </div>
 
-            <div class="bg-gray-50 rounded-xl p-4 text-xs space-y-2 text-gray-600 text-left border border-gray-200">
+            <div class="bg-slate-50 rounded-xl p-4 text-xs space-y-2 text-slate-600 text-left border border-slate-200/80">
                 <div class="flex justify-between">
                     <span>Total Questions:</span>
-                    <strong class="text-gray-900 font-bold" x-text="totalQuestions"></strong>
+                    <strong class="text-slate-900 font-bold" x-text="totalQuestions"></strong>
                 </div>
                 <div class="flex justify-between text-emerald-700 font-bold">
                     <span>Answered:</span>
                     <strong x-text="getAnsweredCount()"></strong>
                 </div>
-                <div class="flex justify-between text-purple-700 font-bold">
+                <div class="flex justify-between text-amber-700 font-bold">
                     <span>Marked for Review:</span>
                     <strong x-text="getReviewCount()"></strong>
                 </div>
-                <div class="flex justify-between text-gray-500">
+                <div class="flex justify-between text-slate-500">
                     <span>Unanswered:</span>
-                    <strong class="text-gray-800 font-bold" x-text="totalQuestions - getAnsweredCount()"></strong>
+                    <strong class="text-slate-800 font-bold" x-text="totalQuestions - getAnsweredCount()"></strong>
                 </div>
             </div>
 
-            <form :action="submitUrl" method="POST" class="pt-2 space-y-2">
+            <form :action="submitUrl" method="POST" @submit="cleanupStorage()" class="pt-2 space-y-2">
                 <input type="hidden" name="_token" :value="csrfToken">
-                <button type="submit" class="w-full py-3 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition">
+                <button type="submit" class="w-full py-3 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-2xs transition-colors">
                     Yes, Finalize &amp; Score
                 </button>
-                <button type="button" @click="confirmSubmitModal = false" class="w-full py-2.5 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-100 transition">
+                <button type="button" @click="confirmSubmitModal = false" class="w-full py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors">
                     Return to Exam
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- Hidden form for auto-submission -->
+    <!-- Hidden form for automatic submission upon time-out -->
     <form id="auto-submit-form" :action="submitUrl" method="POST" style="display:none;">
         <input type="hidden" name="_token" :value="csrfToken">
     </form>
@@ -372,14 +406,46 @@
     <!-- Engine Script -->
     <script>
         function testEngine(config) {
+            const attemptKey = 'nirmaan_cbt_attempt_' + config.attemptId;
+
+            // Target End Timestamp calculation (Resilient across reloads & tab background throttles)
+            // 1. Prefer server authoritative end timestamp (in ms)
+            // 2. Fallback to client localStorage or client time offset
+            let targetEndTime = Number(config.endTimestampMs);
+            if (!targetEndTime || isNaN(targetEndTime)) {
+                const storedEnd = localStorage.getItem(attemptKey + '_end');
+                if (storedEnd && !isNaN(Number(storedEnd))) {
+                    targetEndTime = Number(storedEnd);
+                } else {
+                    targetEndTime = Date.now() + (Math.max(0, Number(config.initialRemainingSeconds) || 0) * 1000);
+                }
+            }
+            localStorage.setItem(attemptKey + '_end', targetEndTime);
+
+            // Compute exact current remaining seconds based on absolute target time
+            const computeRemaining = () => {
+                const msLeft = targetEndTime - Date.now();
+                return Math.max(0, Math.floor(msLeft / 1000));
+            };
+
+            // Restore last active question index
+            let startIdx = 0;
+            try {
+                const savedQ = parseInt(localStorage.getItem(attemptKey + '_q') || '0', 10);
+                if (!isNaN(savedQ) && savedQ >= 0 && savedQ < (config.questions || []).length) {
+                    startIdx = savedQ;
+                }
+            } catch(e) {}
+
             return {
                 attemptId: config.attemptId,
                 totalQuestions: config.totalQuestions,
                 questions: config.questions || [],
                 answers: config.initialAnswers || {},
                 reviews: config.initialReviews || {},
-                remainingSeconds: Math.max(0, Math.floor(Number(config.initialRemainingSeconds) || 0)),
-                currentIndex: 0,
+                remainingSeconds: computeRemaining(),
+                targetEndTime: targetEndTime,
+                currentIndex: startIdx,
                 showPaletteModal: false,
                 confirmSubmitModal: false,
                 saveUrl: config.saveUrl,
@@ -392,23 +458,54 @@
                 },
 
                 init() {
-                    // Start integer countdown timer
+                    // Immediate computation on load
+                    this.tick();
+
+                    // Continuous integer countdown timer synchronized to absolute target end timestamp
                     this.timerInterval = setInterval(() => {
-                        if (this.remainingSeconds > 0) {
-                            this.remainingSeconds = Math.max(0, Math.floor(this.remainingSeconds - 1));
-                        } else {
-                            clearInterval(this.timerInterval);
-                            // Auto submit when time runs out
-                            document.getElementById('auto-submit-form').submit();
-                        }
+                        this.tick();
                     }, 1000);
+
+                    // Also synchronize on tab focus in case mobile browser throttled background intervals
+                    window.addEventListener('focus', () => {
+                        this.tick();
+                    });
+                    document.addEventListener('visibilitychange', () => {
+                        if (!document.hidden) {
+                            this.tick();
+                        }
+                    });
                 },
 
-                // Guaranteed integer formatting MM:SS (zero float decimals)
+                tick() {
+                    const sec = Math.max(0, Math.floor((this.targetEndTime - Date.now()) / 1000));
+                    this.remainingSeconds = sec;
+
+                    if (sec <= 0) {
+                        clearInterval(this.timerInterval);
+                        this.cleanupStorage();
+                        // Auto submit when time runs out
+                        document.getElementById('auto-submit-form').submit();
+                    }
+                },
+
+                cleanupStorage() {
+                    try {
+                        localStorage.removeItem(attemptKey + '_end');
+                        localStorage.removeItem(attemptKey + '_q');
+                    } catch(e) {}
+                },
+
+                // Guaranteed integer formatting MM:SS (or HH:MM:SS if > 1 hour)
                 formatTime(sec) {
                     const totalSec = Math.max(0, Math.floor(Number(sec) || 0));
-                    const m = Math.floor(totalSec / 60);
+                    const h = Math.floor(totalSec / 3600);
+                    const m = Math.floor((totalSec % 3600) / 60);
                     const s = totalSec % 60;
+                    
+                    if (h > 0) {
+                        return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+                    }
                     return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
                 },
 
@@ -438,18 +535,21 @@
 
                 saveAndNext() {
                     if (this.currentIndex < this.totalQuestions - 1) {
-                        this.currentIndex++;
+                        this.goToQuestion(this.currentIndex + 1);
                     }
                 },
 
                 prevQuestion() {
                     if (this.currentIndex > 0) {
-                        this.currentIndex--;
+                        this.goToQuestion(this.currentIndex - 1);
                     }
                 },
 
                 goToQuestion(index) {
                     this.currentIndex = index;
+                    try {
+                        localStorage.setItem(attemptKey + '_q', index);
+                    } catch(e) {}
                 },
 
                 saveAnswerToServer(questionId, option, isReview) {
