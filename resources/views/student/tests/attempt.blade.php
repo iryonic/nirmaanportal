@@ -67,12 +67,8 @@
                     CBT
                 </div>
                 <div class="min-w-0 flex-1">
-                    <div class="hidden sm:flex items-center space-x-1.5 text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">
-                        <span>Candidate Assessment Hall</span>
-                        <span>•</span>
-                        <span class="text-blue-950 font-semibold">Defence Paper</span>
-                    </div>
-                    <h1 class="text-xs sm:text-sm font-black text-slate-900 truncate tracking-tight" title="{{ $test->title }}">
+                    
+                    <h1 class="hidden  sm:block  text-xs font-black text-slate-900 truncate tracking-tight" title="{{ $test->title }}">
                         {{ $test->title }}
                     </h1>
                 </div>
@@ -204,14 +200,30 @@
                     <div class="grid grid-cols-2 gap-2">
                         <button type="button" 
                                 @click="prevQuestion()" 
-                                :disabled="currentIndex === 0" 
+                                :disabled="currentIndex === 0 || isSubmitting" 
                                 class="py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 disabled:opacity-30 transition-colors text-center shadow-2xs">
                             ← Previous
                         </button>
                         <button type="button" 
-                                @click="saveAndNext()" 
-                                class="py-2.5 rounded-xl text-xs font-bold text-white bg-blue-950 hover:bg-blue-900 shadow-2xs transition-all text-center">
-                            <span x-text="currentIndex < totalQuestions - 1 ? 'Save & Next →' : 'Save Response'"></span>
+                                @click="handlePrimaryAction()" 
+                                :disabled="isSubmitting"
+                                class="py-2.5 rounded-xl text-xs font-bold text-white shadow-2xs transition-all text-center flex items-center justify-center space-x-1"
+                                :class="{
+                                    'bg-emerald-600 hover:bg-emerald-700 ring-2 ring-emerald-500/20': currentIndex === totalQuestions - 1 && isAllCompleted(),
+                                    'bg-amber-600 hover:bg-amber-700': currentIndex === totalQuestions - 1 && !isAllCompleted(),
+                                    'bg-blue-950 hover:bg-blue-900': currentIndex < totalQuestions - 1
+                                }">
+                            <template x-if="isSubmitting">
+                                <span>Submitting...</span>
+                            </template>
+                            <template x-if="!isSubmitting">
+                                <span class="flex items-center space-x-1">
+                                    <template x-if="currentIndex === totalQuestions - 1 && isAllCompleted()">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                                    </template>
+                                    <span x-text="getPrimaryButtonLabel()"></span>
+                                </span>
+                            </template>
                         </button>
                     </div>
                 </div>
@@ -221,12 +233,13 @@
                     <div class="flex items-center space-x-2">
                         <button type="button" 
                                 @click="clearResponse()" 
-                                :disabled="!answers[currentQuestion.id]" 
+                                :disabled="!answers[currentQuestion.id] || isSubmitting" 
                                 class="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 disabled:opacity-40 transition-colors shadow-2xs">
                             Clear Response
                         </button>
                         <button type="button" 
                                 @click="toggleReview()" 
+                                :disabled="isSubmitting"
                                 class="px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shadow-2xs" 
                                 :class="reviews[currentQuestion.id] 
                                     ? 'bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-xs' 
@@ -238,14 +251,30 @@
                     <div class="flex items-center space-x-2">
                         <button type="button" 
                                 @click="prevQuestion()" 
-                                :disabled="currentIndex === 0" 
+                                :disabled="currentIndex === 0 || isSubmitting" 
                                 class="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 disabled:opacity-30 transition-colors shadow-2xs">
                             ← Previous
                         </button>
                         <button type="button" 
-                                @click="saveAndNext()" 
-                                class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-blue-950 hover:bg-blue-900 shadow-2xs transition-all">
-                            <span x-text="currentIndex < totalQuestions - 1 ? 'Save & Next →' : 'Save Response'"></span>
+                                @click="handlePrimaryAction()" 
+                                :disabled="isSubmitting"
+                                class="px-5 py-2 rounded-xl text-xs font-bold text-white shadow-2xs transition-all flex items-center space-x-1.5"
+                                :class="{
+                                    'bg-emerald-600 hover:bg-emerald-700 ring-2 ring-emerald-500/20': currentIndex === totalQuestions - 1 && isAllCompleted(),
+                                    'bg-amber-600 hover:bg-amber-700': currentIndex === totalQuestions - 1 && !isAllCompleted(),
+                                    'bg-blue-950 hover:bg-blue-900': currentIndex < totalQuestions - 1
+                                }">
+                            <template x-if="isSubmitting">
+                                <span>Finalizing &amp; Scoring...</span>
+                            </template>
+                            <template x-if="!isSubmitting">
+                                <span class="flex items-center space-x-1.5">
+                                    <template x-if="currentIndex === totalQuestions - 1 && isAllCompleted()">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                                    </template>
+                                    <span x-text="getPrimaryButtonLabel()"></span>
+                                </span>
+                            </template>
                         </button>
                     </div>
                 </div>
@@ -400,7 +429,7 @@
 
             <!-- Scrollable Number Grid -->
             <div class="flex-grow overflow-y-auto py-2.5 custom-scrollbar min-h-0">
-                <div class="grid grid-cols-5 sm:grid-cols-6 gap-2 content-start">
+                <div class="grid grid-cols-5 sm:grid-cols-6 gap-2 content-start p-2">
                     <template x-for="(q, idx) in questions" :key="q.id">
                         <button type="button"
                                 @click="goToQuestion(idx); showPaletteModal = false"
@@ -466,20 +495,45 @@
 
             <form :action="submitUrl" method="POST" @submit="cleanupStorage()" class="pt-2 space-y-2">
                 <input type="hidden" name="_token" :value="csrfToken">
-                <button type="submit" class="w-full py-2.5 sm:py-3 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-2xs transition-colors">
-                    Yes, Finalize &amp; Score
+                <input type="hidden" name="client_answers" :value="JSON.stringify(answers)">
+                <input type="hidden" name="client_reviews" :value="JSON.stringify(reviews)">
+                <button type="submit" :disabled="isSubmitting" class="w-full py-2.5 sm:py-3 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-2xs transition-colors">
+                    <span x-show="!isSubmitting">Yes, Finalize &amp; Score</span>
+                    <span x-show="isSubmitting">Calculating Result...</span>
                 </button>
-                <button type="button" @click="confirmSubmitModal = false" class="w-full py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors">
+                <button type="button" @click="confirmSubmitModal = false" :disabled="isSubmitting" class="w-full py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors">
                     Return to Exam
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- Hidden form for automatic submission upon time-out -->
+    <!-- Hidden form for direct and automatic submission -->
+    <form id="direct-submit-form" :action="submitUrl" method="POST" style="display:none;">
+        <input type="hidden" name="_token" :value="csrfToken">
+        <input type="hidden" name="client_answers" :value="JSON.stringify(answers)">
+        <input type="hidden" name="client_reviews" :value="JSON.stringify(reviews)">
+    </form>
+
     <form id="auto-submit-form" :action="submitUrl" method="POST" style="display:none;">
         <input type="hidden" name="_token" :value="csrfToken">
+        <input type="hidden" name="client_answers" :value="JSON.stringify(answers)">
+        <input type="hidden" name="client_reviews" :value="JSON.stringify(reviews)">
     </form>
+
+    <!-- Guided Exam Flow Toast Notification -->
+    <div x-show="toastMessage" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 translate-y-3"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 translate-y-3"
+         class="fixed bottom-16 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 backdrop-blur-md text-white text-xs px-4 py-2.5 rounded-xl shadow-2xl border border-slate-700 flex items-center space-x-2.5 max-w-sm sm:max-w-md w-[90%] sm:w-auto"
+         style="display:none;">
+        <span class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
+        <span class="font-medium text-[11px] sm:text-xs leading-tight" x-text="toastMessage"></span>
+    </div>
 
     <!-- Engine Script -->
     <script>
@@ -526,6 +580,9 @@
                 currentIndex: startIdx,
                 showPaletteModal: false,
                 confirmSubmitModal: false,
+                isSubmitting: false,
+                toastMessage: null,
+                toastTimeout: null,
                 saveUrl: config.saveUrl,
                 submitUrl: config.submitUrl,
                 csrfToken: config.csrfToken,
@@ -595,6 +652,109 @@
                     return Object.values(this.reviews).filter(Boolean).length;
                 },
 
+                isAllCompleted() {
+                    return this.getAnsweredCount() === this.totalQuestions && this.getReviewCount() === 0;
+                },
+
+                getFirstPendingIndex() {
+                    for (let i = 0; i < this.questions.length; i++) {
+                        const q = this.questions[i];
+                        const isAns = this.answers[q.id] !== null && this.answers[q.id] !== undefined && this.answers[q.id] !== '';
+                        const isRev = Boolean(this.reviews[q.id]);
+                        if (!isAns || isRev) {
+                            return i;
+                        }
+                    }
+                    return -1;
+                },
+
+                getPrimaryButtonLabel() {
+                    if (this.currentIndex < this.totalQuestions - 1) {
+                        return 'Save & Next →';
+                    }
+
+                    // On the last question
+                    if (this.isAllCompleted()) {
+                        return 'Save & Submit';
+                    }
+
+                    const pendingIdx = this.getFirstPendingIndex();
+                    if (pendingIdx !== -1 && pendingIdx !== this.currentIndex) {
+                        return 'Review Pending (Q' + (pendingIdx + 1) + ') →';
+                    }
+
+                    return 'Save & Submit';
+                },
+
+                async handlePrimaryAction() {
+                    if (this.isSubmitting) return;
+
+                    // If not on the last question, standard Save & Next navigation
+                    if (this.currentIndex < this.totalQuestions - 1) {
+                        this.goToQuestion(this.currentIndex + 1);
+                        return;
+                    }
+
+                    // On the last question:
+                    // 1. If all questions are answered & none in review -> directly finalize and submit
+                    if (this.isAllCompleted()) {
+                        await this.submitExamDirectly();
+                        return;
+                    }
+
+                    // 2. If some questions are pending (unanswered or marked for review), redirect candidate
+                    const pendingIdx = this.getFirstPendingIndex();
+                    if (pendingIdx !== -1 && pendingIdx !== this.currentIndex) {
+                        this.goToQuestion(pendingIdx);
+                        const targetQ = this.questions[pendingIdx];
+                        const isUnans = !this.answers[targetQ.id];
+                        const reason = isUnans ? 'Unanswered' : 'Marked for Review';
+                        this.triggerToast('Redirecting to Q' + (pendingIdx + 1) + ' (' + reason + ') before submission.');
+                        return;
+                    }
+
+                    // 3. Current last question is the only one pending
+                    const currentQ = this.currentQuestion;
+                    if (!this.answers[currentQ.id]) {
+                        this.triggerToast('Please choose an option for Q' + (this.currentIndex + 1) + ', or use "Finish & Score Examination" on the palette to submit blank.');
+                    } else if (this.reviews[currentQ.id]) {
+                        this.reviews[currentQ.id] = false;
+                        this.saveAnswerToServer(currentQ.id, this.answers[currentQ.id], false);
+                        if (this.isAllCompleted()) {
+                            await this.submitExamDirectly();
+                        }
+                    }
+                },
+
+                async submitExamDirectly() {
+                    if (this.isSubmitting) return;
+                    this.isSubmitting = true;
+
+                    // Final authoritative sync for current question answer
+                    const currentQ = this.currentQuestion;
+                    if (currentQ && currentQ.id) {
+                        try {
+                            await this.saveAnswerToServerAsync(currentQ.id, this.answers[currentQ.id] || null, this.reviews[currentQ.id] || false);
+                        } catch(e) {
+                            console.error('Final sync error', e);
+                        }
+                    }
+
+                    this.cleanupStorage();
+                    const form = document.getElementById('direct-submit-form') || document.getElementById('auto-submit-form');
+                    if (form) {
+                        form.submit();
+                    }
+                },
+
+                triggerToast(msg) {
+                    this.toastMessage = msg;
+                    if (this.toastTimeout) clearTimeout(this.toastTimeout);
+                    this.toastTimeout = setTimeout(() => {
+                        this.toastMessage = null;
+                    }, 4500);
+                },
+
                 selectOption(opt) {
                     this.answers[this.currentQuestion.id] = opt;
                     this.saveAnswerToServer(this.currentQuestion.id, opt, this.reviews[this.currentQuestion.id] || false);
@@ -612,9 +772,7 @@
                 },
 
                 saveAndNext() {
-                    if (this.currentIndex < this.totalQuestions - 1) {
-                        this.goToQuestion(this.currentIndex + 1);
-                    }
+                    this.handlePrimaryAction();
                 },
 
                 prevQuestion() {
@@ -643,6 +801,21 @@
                             is_marked_for_review: isReview
                         })
                     }).catch(err => console.error('Auto-save error', err));
+                },
+
+                saveAnswerToServerAsync(questionId, option, isReview) {
+                    return fetch(this.saveUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': this.csrfToken
+                        },
+                        body: JSON.stringify({
+                            question_id: questionId,
+                            selected_option: option,
+                            is_marked_for_review: isReview
+                        })
+                    });
                 }
             };
         }

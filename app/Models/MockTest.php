@@ -52,4 +52,15 @@ class MockTest extends Model
     {
         return $this->hasMany(TestAttempt::class);
     }
+
+    public function getCalculatedTotalMarksAttribute(): float
+    {
+        if ($this->relationLoaded('questions') && $this->questions->isNotEmpty()) {
+            $sum = (float) $this->questions->sum('marks');
+            if ($sum > 0) {
+                return $sum;
+            }
+        }
+        return (float) $this->total_marks;
+    }
 }

@@ -294,5 +294,184 @@ class MockTestEngineTest extends TestCase
         // Assert endTimestampMs is provided for client synchronization
         $this->assertNotNull($response->viewData('endTimestampMs'));
     }
+
+    public function test_evaluation_calculates_precise_marks_negative_penalties_and_qualification(): void
+    {
+        $student = User::factory()->create([
+            'role' => 'student',
+            'is_active' => true,
+        ]);
+
+        $test = MockTest::create([
+            'title' => 'Industry Standard Evaluation Paper',
+            'slug' => 'industry-standard-evaluation-paper',
+            'duration_minutes' => 45,
+            'total_marks' => 12.00,
+            'pass_marks' => 6.00,
+            'is_published' => true,
+        ]);
+
+        $q1 = Question::create([
+            'question_text' => 'Question 1 positive test',
+            'option_a' => 'Option Alpha',
+            'option_b' => 'Option Beta',
+            'option_c' => 'Option Gamma',
+            'option_d' => 'Option Delta',
+            'correct_option' => 'A',
+            'subject' => 'Science',
+            'marks' => 4.00,
+            'negative_marks' => 1.00,
+            'is_active' => true,
+        ]);
+
+        $q2 = Question::create([
+            'question_text' => 'Question 2 negative test',
+            'option_a' => 'Option Alpha',
+            'option_b' => 'Option Beta',
+            'option_c' => 'Option Gamma',
+            'option_d' => 'Option Delta',
+            'correct_option' => 'B',
+            'subject' => 'Science',
+            'marks' => 4.00,
+            'negative_marks' => 1.00,
+            'is_active' => true,
+        ]);
+
+        $q3 = Question::create([
+            'question_text' => 'Question 3 unattempted test',
+            'option_a' => 'Option Alpha',
+            'option_b' => 'Option Beta',
+            'option_c' => 'Option Gamma',
+            'option_d' => 'Option Delta',
+            'correct_option' => 'C',
+            'subject' => 'Science',
+            'marks' => 4.00,
+            'negative_marks' => 1.00,
+            'is_active' => true,
+        ]);
+
+        $test->questions()->attach([
+            $q1->id => ['sort_order' => 1],
+            $q2->id => ['sort_order' => 2],
+            $q3->id => ['sort_order' => 3],
+        ]);
+
+        $attempt = TestAttempt::create([
+            'user_id' => $student->id,
+            'mock_test_id' => $test->id,
+            'started_at' => now(),
+            'status' => 'in_progress',
+            'total_questions' => 3,
+        ]);
+
+        // Save Q1 with lowercase 'a' (case-insensitive validation)
+        $this->actingAs($student)->postJson(route('student.tests.save', $attempt), [
+            'question_id' => $q1->id,
+            'selected_option' => 'a',
+        ])->assertJson(['success' => true]);
+
+        // Save Q2 with incorrect option 'C'
+        $this->actingAs($student)->postJson(route('student.tests.save', $attempt), [
+            'question_id' => $q2->id,
+            'selected_option' => 'C',
+        ])->assertJson(['success' => true]);
+
+        // Submit attempt (Q3 left unattempted)
+        $response = $this->actingAs($student)->post(route('student.tests.submit', $attempt));
+        $response->assertRedirect(route('student.tests.result', $attempt));
+
+        $attempt->refresh();
+        $this->assertEquals('completed', $attempt->status);
+        $this->assertEquals(3, $attempt->total_questions);
+        $this->assertEquals(1, $attempt->correct_count);
+        $this->assertEquals(1, $attempt->incorrect_count);
+        $this->assertEquals(1, $attempt->unanswered_count);
+        // Score: +4.00 - 1.00 + 0 = 3.00
+        $this->assertEquals(3.00, (float) $attempt->score);
+        // Accuracy: 1 correct out of 2 attempted = 50.00%
+        $this->assertEquals(50.00, (float) $attempt->accuracy_percentage);
+
+        // Verify scorecard view includes calculated total marks and review details
+        $scorecard = $this->actingAs($student)->get(route('student.tests.result', $attempt));
+        $scorecard->assertStatus(200);
+        $scorecard->assertSee('3.00');
+        $scorecard->assertSee('12.0 Marks');
+        $scorecard->assertSee('Not Attempted (0.00 Marks)');
+        $scorecard->assertSee('+4.00 Marks');
+        $scorecard->assertSee('-1.00 Marks');
+    }
+
+    public function test_client_answers_payload_is_synchronized_during_submission(): void
+    {
+        $student = User::factory()->create([
+            'role' => 'student',
+            'is_active' => true,
+        ]);
+
+        $test = MockTest::create([
+            'title' => 'Direct Submit Payload Verification',
+            'slug' => 'direct-submit-payload-verification',
+            'duration_minutes' => 30,
+            'total_marks' => 8.00,
+            'pass_marks' => 4.00,
+            'is_published' => true,
+        ]);
+
+        $q1 = Question::create([
+            'question_text' => 'Direct Question 1',
+            'option_a' => 'Alpha',
+            'option_b' => 'Beta',
+            'option_c' => 'Gamma',
+            'option_d' => 'Delta',
+            'correct_option' => 'A',
+            'subject' => 'General Knowledge',
+            'marks' => 4.00,
+            'negative_marks' => 1.00,
+            'is_active' => true,
+        ]);
+
+        $q2 = Question::create([
+            'question_text' => 'Direct Question 2',
+            'option_a' => 'Alpha',
+            'option_b' => 'Beta',
+            'option_c' => 'Gamma',
+            'option_d' => 'Delta',
+            'correct_option' => 'D',
+            'subject' => 'General Knowledge',
+            'marks' => 4.00,
+            'negative_marks' => 1.00,
+            'is_active' => true,
+        ]);
+
+        $test->questions()->attach([
+            $q1->id => ['sort_order' => 1],
+            $q2->id => ['sort_order' => 2],
+        ]);
+
+        $attempt = TestAttempt::create([
+            'user_id' => $student->id,
+            'mock_test_id' => $test->id,
+            'started_at' => now(),
+            'status' => 'in_progress',
+            'total_questions' => 2,
+        ]);
+
+        // Submit directly with client_answers JSON payload (without prior AJAX calls)
+        $response = $this->actingAs($student)->post(route('student.tests.submit', $attempt), [
+            'client_answers' => json_encode([
+                $q1->id => 'A',
+                $q2->id => 'D',
+            ]),
+        ]);
+
+        $response->assertRedirect(route('student.tests.result', $attempt));
+
+        $attempt->refresh();
+        $this->assertEquals('completed', $attempt->status);
+        $this->assertEquals(2, $attempt->correct_count);
+        $this->assertEquals(0, $attempt->incorrect_count);
+        $this->assertEquals(8.00, (float) $attempt->score);
+        $this->assertEquals(100.00, (float) $attempt->accuracy_percentage);
+    }
 }
 

@@ -17,9 +17,33 @@
             </h1>
 
             <!-- Score Display Box (Blue-950 solid box) -->
-            <div class="inline-flex flex-col items-center justify-center p-5 rounded-xl bg-blue-950 text-white min-w-[180px] shadow-2xs border border-blue-900">
-                <span class="text-3xl sm:text-4xl font-bold font-mono tracking-tight">{{ $attempt->score }}</span>
-                <span class="text-[11px] font-medium text-blue-200 uppercase tracking-wider mt-1">Out of {{ number_format($attempt->mockTest->total_marks, 0) }} Marks</span>
+            <div class="inline-flex flex-col items-center justify-center p-5 rounded-xl bg-blue-950 text-white min-w-[200px] shadow-2xs border border-blue-900">
+                <span class="text-3xl sm:text-4xl font-bold font-mono tracking-tight">{{ number_format($attempt->score, 2) }}</span>
+                <span class="text-[11px] font-medium text-blue-200 uppercase tracking-wider mt-1">
+                    Out of {{ number_format($totalMarksPossible ?? $attempt->mockTest->total_marks, 1) }} Marks
+                </span>
+                <span class="text-[10px] text-blue-300 font-mono mt-0.5">
+                    ({{ ($totalMarksPossible ?? $attempt->mockTest->total_marks) > 0 ? round(($attempt->score / ($totalMarksPossible ?? $attempt->mockTest->total_marks)) * 100, 1) : 0 }}% Score)
+                </span>
+            </div>
+
+            <!-- Examination Qualification Status -->
+            @php
+                $cutoffMarks = (float) $attempt->mockTest->pass_marks;
+                $hasPassed = (float) $attempt->score >= $cutoffMarks;
+            @endphp
+            <div>
+                @if($hasPassed)
+                    <span class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs">
+                        <svg class="w-3.5 h-3.5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                        <span>QUALIFIED / PASSED (Cut-off: {{ number_format($cutoffMarks, 1) }})</span>
+                    </span>
+                @else
+                    <span class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
+                        <svg class="w-3.5 h-3.5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        <span>DID NOT QUALIFY (Cut-off: {{ number_format($cutoffMarks, 1) }})</span>
+                    </span>
+                @endif
             </div>
 
             <!-- Performance Metrics Grid -->
@@ -61,17 +85,22 @@
         </div>
 
         <!-- Question-by-Question Solution Review -->
+        @php
+            $items = isset($reviewItems) ? $reviewItems : $attempt->answers->map(fn($a) => ['question' => $a->question, 'answer' => $a]);
+        @endphp
         <div class="space-y-4">
             <div class="flex items-center justify-between pb-2 border-b border-slate-200">
                 <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500">Step-by-Step Question Review &amp; Explanations</h2>
-                <span class="text-xs text-slate-400 font-mono">{{ $attempt->answers->count() }} Questions Evaluated</span>
+                <span class="text-xs text-slate-400 font-mono">{{ count($items) }} Questions Evaluated</span>
             </div>
 
-            @foreach($attempt->answers as $index => $ans)
+            @foreach($items as $index => $item)
                 @php
-                    $q = $ans->question;
-                    $isCorrect = $ans->is_correct;
-                    $hasAnswered = !empty($ans->selected_option);
+                    $q = $item['question'];
+                    $ans = $item['answer'];
+                    $hasAnswered = $ans && !empty($ans->selected_option);
+                    $isCorrect = $ans && $ans->is_correct;
+                    $marksAwarded = $ans ? (float) $ans->marks_obtained : 0.00;
                 @endphp
                 <div class="bg-white rounded-xl p-5 sm:p-6 border border-slate-200 shadow-2xs space-y-3.5">
                     
@@ -88,15 +117,15 @@
                         <div>
                             @if(!$hasAnswered)
                                 <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                                    Not Attempted (0 Marks)
+                                    Not Attempted (0.00 Marks)
                                 </span>
                             @elseif($isCorrect)
                                 <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                    ✓ Correct (+{{ $q->marks }} Marks)
+                                    ✓ Correct (+{{ number_format($marksAwarded, 2) }} Marks)
                                 </span>
                             @else
                                 <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-                                    ✗ Incorrect (-{{ $q->negative_marks }} Marks)
+                                    ✗ Incorrect ({{ number_format($marksAwarded, 2) }} Marks)
                                 </span>
                             @endif
                         </div>
@@ -112,7 +141,7 @@
                             @php
                                 $optKey = 'option_' . strtolower($opt);
                                 $isThisCorrect = ($q->correct_option === $opt);
-                                $isUserChosen = ($ans->selected_option === $opt);
+                                $isUserChosen = $ans && ($ans->selected_option === $opt);
                                 
                                 $cardClass = 'border-slate-200 bg-white text-slate-700';
                                 if ($isThisCorrect) {

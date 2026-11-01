@@ -232,29 +232,39 @@ class MockTestController extends Controller
 
         $validated = $request->validate([
             'question_id' => ['required', 'exists:questions,id'],
-            'selected_option' => ['nullable', 'in:A,B,C,D'],
+            'selected_option' => ['nullable', 'string'],
             'is_marked_for_review' => ['nullable', 'boolean'],
         ]);
+
+        $selectedOption = null;
+        if (!empty($validated['selected_option'])) {
+            $opt = strtoupper(trim((string) $validated['selected_option']));
+            if (in_array($opt, ['A', 'B', 'C', 'D'])) {
+                $selectedOption = $opt;
+            }
+        }
 
         $attemptAnswer = TestAttemptAnswer::firstOrNew([
             'test_attempt_id' => $attempt->id,
             'question_id' => $validated['question_id'],
         ]);
 
-        if (array_key_exists('selected_option', $validated)) {
-            $attemptAnswer->selected_option = $validated['selected_option'];
-        }
+        $attemptAnswer->selected_option = $selectedOption;
 
-        if (isset($validated['is_marked_for_review'])) {
-            $attemptAnswer->is_marked_for_review = $validated['is_marked_for_review'];
+        if (array_key_exists('is_marked_for_review', $validated)) {
+            $attemptAnswer->is_marked_for_review = (bool) $validated['is_marked_for_review'];
         }
 
         $attemptAnswer->save();
 
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success' => true,
+            'selected_option' => $selectedOption,
+            'is_marked_for_review' => $attemptAnswer->is_marked_for_review,
+        ]);
     }
 
-    public function submit(TestAttempt $attempt)
+    public function submit(Request $request, TestAttempt $attempt)
     {
         if ($attempt->user_id !== Auth::id()) {
             abort(403);
@@ -264,50 +274,121 @@ class MockTestController extends Controller
             return redirect()->route('student.tests.result', $attempt->id);
         }
 
+        // Resilient payload synchronization: process any client-side answers submitted with the form
+        if ($request->filled('client_answers')) {
+            $clientAnswers = json_decode($request->input('client_answers'), true);
+            if (is_array($clientAnswers)) {
+                foreach ($clientAnswers as $qId => $opt) {
+                    if (!empty($opt)) {
+                        $cleanOpt = strtoupper(trim((string) $opt));
+                        if (in_array($cleanOpt, ['A', 'B', 'C', 'D'])) {
+                            TestAttemptAnswer::updateOrCreate(
+                                ['test_attempt_id' => $attempt->id, 'question_id' => (int) $qId],
+                                ['selected_option' => $cleanOpt]
+                            );
+                        }
+                    }
+                }
+            }
+        }
+
+        if ($request->filled('client_reviews')) {
+            $clientReviews = json_decode($request->input('client_reviews'), true);
+            if (is_array($clientReviews)) {
+                foreach ($clientReviews as $qId => $isRev) {
+                    TestAttemptAnswer::updateOrCreate(
+                        ['test_attempt_id' => $attempt->id, 'question_id' => (int) $qId],
+                        ['is_marked_for_review' => (bool) $isRev]
+                    );
+                }
+            }
+        }
+
         return $this->processSubmission($attempt);
     }
 
     private function processSubmission(TestAttempt $attempt)
     {
         $test = $attempt->mockTest;
-        $answers = $attempt->answers()->with('question')->get();
+
+        // Fetch all questions for the mock test in the authoritative examination sequence
+        $questions = $test->questions()
+            ->withPivot('sort_order')
+            ->orderBy('mock_test_questions.sort_order')
+            ->get();
+
+        $existingAnswers = $attempt->answers()->get()->keyBy('question_id');
 
         $correctCount = 0;
         $incorrectCount = 0;
         $unansweredCount = 0;
         $totalScore = 0.00;
 
-        foreach ($answers as $ans) {
-            $question = $ans->question;
-            if (empty($ans->selected_option)) {
+        foreach ($questions as $question) {
+            $ans = $existingAnswers->get($question->id);
+            if (!$ans) {
+                $ans = new TestAttemptAnswer([
+                    'test_attempt_id' => $attempt->id,
+                    'question_id' => $question->id,
+                    'selected_option' => null,
+                    'is_marked_for_review' => false,
+                ]);
+            }
+
+            // Accurate question marking scheme
+            $positiveMarks = (float) ($question->marks > 0 ? $question->marks : 1.00);
+
+            if ($question->negative_marks !== null && $question->negative_marks >= 0) {
+                $negativeMarks = (float) $question->negative_marks;
+            } elseif ($test->negative_marking_ratio !== null && $test->negative_marking_ratio > 0) {
+                $negativeMarks = round($positiveMarks * (float) $test->negative_marking_ratio, 2);
+            } else {
+                $negativeMarks = 0.00;
+            }
+
+            $selected = strtoupper(trim((string) $ans->selected_option));
+            $correct = strtoupper(trim((string) $question->correct_option));
+
+            if ($selected === '' || !in_array($selected, ['A', 'B', 'C', 'D'])) {
+                // Unanswered response
                 $unansweredCount++;
+                $ans->selected_option = null;
                 $ans->is_correct = null;
                 $ans->marks_obtained = 0.00;
-            } elseif (strtoupper($ans->selected_option) === strtoupper($question->correct_option)) {
+            } elseif ($selected === $correct) {
+                // Correct response
                 $correctCount++;
+                $ans->selected_option = $selected;
                 $ans->is_correct = true;
-                $ans->marks_obtained = $question->marks;
-                $totalScore += (float) $question->marks;
+                $ans->marks_obtained = round($positiveMarks, 2);
+                $totalScore += $positiveMarks;
             } else {
+                // Incorrect response
                 $incorrectCount++;
+                $ans->selected_option = $selected;
                 $ans->is_correct = false;
-                $negative = (float) $question->negative_marks;
-                $ans->marks_obtained = -$negative;
-                $totalScore -= $negative;
+                $ans->marks_obtained = -round($negativeMarks, 2);
+                $totalScore -= $negativeMarks;
             }
+
             $ans->save();
         }
 
-        $totalQuestions = $answers->count();
+        $totalQuestions = $questions->count();
         $totalAttempted = $correctCount + $incorrectCount;
-        $accuracy = $totalAttempted > 0 ? round(($correctCount / $totalAttempted) * 100, 2) : 0;
-        $timeTaken = min($test->duration_minutes * 60, (int) floor(now()->diffInSeconds($attempt->started_at)));
+        $accuracy = $totalAttempted > 0 ? round(($correctCount / $totalAttempted) * 100, 2) : 0.00;
+
+        $durationSeconds = (int) ($test->duration_minutes * 60);
+        $timeTaken = min($durationSeconds, max(1, (int) floor($attempt->started_at->diffInSeconds(now()))));
+
+        // Precision net examination score
+        $finalScore = round($totalScore, 2);
 
         $attempt->update([
             'status' => 'completed',
             'submitted_at' => now(),
             'time_taken_seconds' => $timeTaken,
-            'score' => max(0, round($totalScore, 2)),
+            'score' => $finalScore,
             'total_questions' => $totalQuestions,
             'correct_count' => $correctCount,
             'incorrect_count' => $incorrectCount,
@@ -325,9 +406,30 @@ class MockTestController extends Controller
             abort(403);
         }
 
-        $attempt->load(['mockTest.examCategory', 'answers.question']);
+        $attempt->load(['mockTest.examCategory']);
+        $test = $attempt->mockTest;
 
-        return view('student.tests.result', compact('attempt'));
+        $questions = $test->questions()
+            ->withPivot('sort_order')
+            ->orderBy('mock_test_questions.sort_order')
+            ->get();
+
+        $answers = $attempt->answers()
+            ->with('question')
+            ->get()
+            ->keyBy('question_id');
+
+        $reviewItems = $questions->map(function ($q) use ($answers) {
+            return [
+                'question' => $q,
+                'answer' => $answers->get($q->id),
+            ];
+        });
+
+        $totalMarksPossible = (float) ($questions->sum('marks') > 0 ? $questions->sum('marks') : $test->total_marks);
+        $isQualified = (float) $attempt->score >= (float) $test->pass_marks;
+
+        return view('student.tests.result', compact('attempt', 'test', 'reviewItems', 'totalMarksPossible', 'isQualified'));
     }
 
     private function checkTestAccess($user, MockTest $test): bool
