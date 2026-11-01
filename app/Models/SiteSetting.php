@@ -53,8 +53,8 @@ class SiteSetting extends Model
     public static function getFeaturedVideo(): array
     {
         $enabled = filter_var(static::get('home_video_enabled', '1'), FILTER_VALIDATE_BOOLEAN);
-        $url = static::get('home_video_url', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
-        $videoId = static::getYouTubeId($url) ?? 'dQw4w9WgXcQ';
+        $url = static::get('home_video_url', 'https://youtu.be/3t5M10gBVCc');
+        $videoId = static::getYouTubeId($url) ?? '3t5M10gBVCc';
 
         return [
             'enabled' => $enabled,

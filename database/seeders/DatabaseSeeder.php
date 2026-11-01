@@ -719,6 +719,7 @@ class DatabaseSeeder extends Seeder
             'contact_email' => 'support@nirmaan.com',
             'contact_address' => 'Nirmaan Defence Academy, Sector 12, Defence Colony, New Delhi - 110024',
             'youtube_url' => 'https://youtube.com/@nirmaandefence',
+            'home_video_url' => 'https://youtu.be/3t5M10gBVCc',
             'telegram_url' => 'https://t.me/nirmaandefence',
             'instagram_url' => 'https://instagram.com/nirmaandefence',
             'facebook_url' => 'https://facebook.com/nirmaandefence',

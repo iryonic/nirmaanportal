@@ -73,4 +73,13 @@ class FeaturedVideoManagementTest extends TestCase
         $this->assertEquals('SSB Interview Demonstration', SiteSetting::get('home_video_title'));
         $this->assertEquals('GTO Ground Test Analysis', SiteSetting::get('home_video_highlight_1'));
     }
+
+    public function test_featured_video_defaults_to_custom_video(): void
+    {
+        $video = SiteSetting::getFeaturedVideo();
+
+        $this->assertEquals('https://youtu.be/3t5M10gBVCc', $video['url']);
+        $this->assertEquals('3t5M10gBVCc', $video['video_id']);
+        $this->assertStringContainsString('3t5M10gBVCc', $video['embed_url']);
+    }
 }
