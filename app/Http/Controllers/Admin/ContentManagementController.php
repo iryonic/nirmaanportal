@@ -10,38 +10,45 @@ use Illuminate\Http\Request;
 
 class ContentManagementController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $faqs = Faq::orderBy('sort_order')->get();
-        $inquiries = ContactInquiry::latest()->paginate(10);
+        
+        $inquiriesQuery = ContactInquiry::latest();
+        if ($request->filled('type') && in_array($request->type, ['inquiry', 'grievance'])) {
+            $inquiriesQuery->where('type', $request->type);
+        }
+        $inquiries = $inquiriesQuery->paginate(15)->withQueryString();
+
         $settings = SiteSetting::all()->pluck('value', 'key');
         $featuredVideo = SiteSetting::getFeaturedVideo();
 
-        return view('admin.content.index', compact('faqs', 'inquiries', 'settings', 'featuredVideo'));
+        $aboutConfig = SiteSetting::getAboutConfig();
+        $contactConfig = SiteSetting::getContactConfig();
+        $privacyConfig = SiteSetting::getPrivacyConfig();
+        $termsConfig = SiteSetting::getTermsConfig();
+        $grievanceConfig = SiteSetting::getGrievanceConfig();
+
+        return view('admin.content.index', compact(
+            'faqs',
+            'inquiries',
+            'settings',
+            'featuredVideo',
+            'aboutConfig',
+            'contactConfig',
+            'privacyConfig',
+            'termsConfig',
+            'grievanceConfig'
+        ));
     }
 
     public function updateSettings(Request $request)
     {
-        $keys = [
-            'hero_title',
-            'hero_subtitle',
-            'contact_phone',
-            'contact_email',
-            'contact_address',
-            'youtube_url',
-            'telegram_url',
-            'instagram_url',
-            'facebook_url',
-            'twitter_url',
-        ];
-
-        foreach ($keys as $key) {
-            if ($request->has($key)) {
-                SiteSetting::set($key, $request->input($key));
-            }
+        foreach ($request->except('_token') as $key => $val) {
+            SiteSetting::set($key, (string) ($val ?? ''));
         }
 
-        return back()->with('success', 'Website settings updated successfully.');
+        return back()->with('success', 'Page content and website settings updated successfully.');
     }
 
     public function updateFeaturedVideo(Request $request)

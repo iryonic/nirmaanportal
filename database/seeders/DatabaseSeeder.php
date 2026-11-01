@@ -30,7 +30,7 @@ class DatabaseSeeder extends Seeder
         $admin = User::firstOrCreate(
             ['email' => 'admin@nirmaan.com'],
             [
-                'name' => 'Col. R. K. Verma (Director)',
+                'name' => 'Irfan Manzoor',
                 'password' => Hash::make('password123'),
                 'role' => 'admin',
                 'phone' => '+91 98765 43210',
@@ -42,10 +42,10 @@ class DatabaseSeeder extends Seeder
         $student = User::firstOrCreate(
             ['email' => 'student@nirmaan.com'],
             [
-                'name' => 'Aditya Pratap Singh',
+                'name' => 'Dhruv Mathur',
                 'password' => Hash::make('password123'),
                 'role' => 'student',
-                'phone' => '+91 91234 56789',
+                'phone' => '+91 90158 51387',
                 'target_exam' => 'Indian Army Agniveer',
                 'is_active' => true,
             ]

@@ -26,10 +26,10 @@
 
     <!-- Student Workspace Sub-Navigation (Linear style) -->
     @auth
-        <div class="bg-white border-b border-slate-200 fixed top-16 z-30 shadow-2xs">
+        <div class="bg-white border-b border-slate-200 sticky top-16 z-30 shadow-2xs">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-11 text-xs">
-                    <div class="flex items-center space-x-1 sm:space-x-6 overflow-x-auto no-scrollbar py-1">
+                    <div class="flex items-center space-x-1 sm:space-x-6 overflow-x-auto no-scrollbar scrollbar-none py-1">
                         <a href="{{ route('student.dashboard') }}" 
                            class="inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-md font-medium transition-colors whitespace-nowrap {{ request()->routeIs('student.dashboard') ? 'text-blue-950 font-semibold bg-slate-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>

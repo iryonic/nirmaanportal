@@ -10,9 +10,11 @@ class ContactInquiry extends Model
     use HasFactory;
 
     protected $fillable = [
+        'ticket_number',
         'name',
         'email',
         'phone',
+        'type',
         'subject',
         'message',
         'status',

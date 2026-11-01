@@ -1,54 +1,74 @@
 @extends('layouts.admin')
 
-@section('title', 'Site Content, FAQs & Inquiries — Admin Command')
+@section('title', 'Site Content, Legal Pages, FAQs & Grievances — Admin Command')
 @section('header_title', 'CMS')
 
 @section('content')
-<div class="space-y-5" x-data="{ activeTab: 'settings' }">
+<div class="space-y-5" x-data="{ activeTab: '{{ request('tab', 'settings') }}' }">
     
     <!-- Action Bar & Page Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white rounded-xl p-4 sm:p-5 border border-slate-200/80 shadow-2xs">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white rounded-xl p-4 sm:p-5 border border-slate-200/80 shadow-2xs">
         <div>
             <div class="flex items-center space-x-1.5 text-xs text-slate-500 font-medium mb-1">
                 <a href="{{ route('admin.dashboard') }}" class="hover:text-blue-950">Dashboard</a>
                 <span>/</span>
                 <span class="text-slate-900 font-semibold">Portal Content &amp; CMS</span>
             </div>
-            <h1 class="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">Website Content, FAQs &amp; Inquiries</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Maintain academy contact information, homepage copy, FAQ accordion questions, and candidate inquiries.</p>
+            <h1 class="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">Website Content, Pages, FAQs &amp; Grievances</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Manage About, Contact, Privacy, Terms, Grievance Cell, homepage copy, and candidate inquiries.</p>
         </div>
 
         <!-- Linear Tab Segmented Control -->
-        <div class="flex items-center p-1 bg-slate-100 rounded-lg text-xs font-medium self-start sm:self-auto border border-slate-200/80">
+        <div class="flex items-center flex-wrap gap-1 p-1 bg-slate-100 rounded-lg text-xs font-medium border border-slate-200/80">
             <button @click="activeTab = 'settings'" 
                     :class="activeTab === 'settings' ? 'bg-white text-slate-900 font-semibold shadow-2xs' : 'text-slate-600 hover:text-slate-900'"
-                    class="px-3 py-1.5 rounded-md transition-colors">
-                Settings &amp; Copy
+                    class="px-2.5 py-1.5 rounded-md transition-colors">
+                General &amp; Social
+            </button>
+            <button @click="activeTab = 'about'" 
+                    :class="activeTab === 'about' ? 'bg-white text-slate-900 font-semibold shadow-2xs' : 'text-slate-600 hover:text-slate-900'"
+                    class="px-2.5 py-1.5 rounded-md transition-colors">
+                About Page
+            </button>
+            <button @click="activeTab = 'contact'" 
+                    :class="activeTab === 'contact' ? 'bg-white text-slate-900 font-semibold shadow-2xs' : 'text-slate-600 hover:text-slate-900'"
+                    class="px-2.5 py-1.5 rounded-md transition-colors">
+                Contact &amp; Map
+            </button>
+            <button @click="activeTab = 'legal'" 
+                    :class="activeTab === 'legal' ? 'bg-white text-slate-900 font-semibold shadow-2xs' : 'text-slate-600 hover:text-slate-900'"
+                    class="px-2.5 py-1.5 rounded-md transition-colors">
+                Privacy &amp; Terms
+            </button>
+            <button @click="activeTab = 'grievance'" 
+                    :class="activeTab === 'grievance' ? 'bg-white text-slate-900 font-semibold shadow-2xs' : 'text-slate-600 hover:text-slate-900'"
+                    class="px-2.5 py-1.5 rounded-md transition-colors">
+                Grievance Cell
             </button>
             <button @click="activeTab = 'video'" 
                     :class="activeTab === 'video' ? 'bg-white text-slate-900 font-semibold shadow-2xs' : 'text-slate-600 hover:text-slate-900'"
-                    class="px-3 py-1.5 rounded-md transition-colors flex items-center space-x-1.5">
+                    class="px-2.5 py-1.5 rounded-md transition-colors flex items-center space-x-1">
                 <svg class="w-3.5 h-3.5 text-rose-600" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
-                <span>Featured Video</span>
+                <span>Video</span>
             </button>
             <button @click="activeTab = 'faqs'" 
                     :class="activeTab === 'faqs' ? 'bg-white text-slate-900 font-semibold shadow-2xs' : 'text-slate-600 hover:text-slate-900'"
-                    class="px-3 py-1.5 rounded-md transition-colors">
+                    class="px-2.5 py-1.5 rounded-md transition-colors">
                 FAQs ({{ $faqs->count() }})
             </button>
             <button @click="activeTab = 'inquiries'" 
                     :class="activeTab === 'inquiries' ? 'bg-white text-slate-900 font-semibold shadow-2xs' : 'text-slate-600 hover:text-slate-900'"
-                    class="px-3 py-1.5 rounded-md transition-colors">
-                Inquiries ({{ $inquiries->total() }})
+                    class="px-2.5 py-1.5 rounded-md transition-colors">
+                Inquiries &amp; Dockets ({{ $inquiries->total() }})
             </button>
         </div>
     </div>
 
-    <!-- Tab 1: General Settings & Social Links -->
+    <!-- TAB 1: General & Homepage Copy -->
     <div x-show="activeTab === 'settings'" class="bg-white rounded-xl p-5 sm:p-7 border border-slate-200/80 shadow-2xs space-y-5">
         <div>
-            <h2 class="text-sm font-semibold text-slate-900">Homepage Copy &amp; Academy Contact Desks</h2>
-            <p class="text-[11px] text-slate-500">Configure live headlines and contact information shown on the discovery portal.</p>
+            <h2 class="text-sm font-semibold text-slate-900">Homepage Copy &amp; Social Community Channels</h2>
+            <p class="text-[11px] text-slate-500">Configure global headlines and social handles shown in discovery pages and footer.</p>
         </div>
 
         <form action="{{ route('admin.content.settings') }}" method="POST" class="space-y-4">
@@ -116,14 +136,373 @@
             </div>
 
             <div class="pt-2">
-                <button type="submit" class="px-5 py-2 rounded-lg text-xs font-semibold text-white bg-blue-950 hover:bg-blue-900 shadow-2xs transition-colors">
-                    Save Platform Settings
+                <button type="submit" class="px-5 py-2.5 rounded-lg text-xs font-bold text-white bg-blue-950 hover:bg-blue-900 shadow-2xs transition-colors">
+                    Save General Settings
                 </button>
             </div>
         </form>
     </div>
 
-    <!-- Tab: Featured YouTube Video Manager -->
+    <!-- TAB 2: About Us Page Configuration -->
+    <div x-show="activeTab === 'about'" class="bg-white rounded-xl p-5 sm:p-7 border border-slate-200/80 shadow-2xs space-y-6" style="display:none;">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div>
+                <h2 class="text-sm font-semibold text-slate-900">About Us Page Customizer</h2>
+                <p class="text-[11px] text-slate-500">Edit hero headline, leadership communique, milestone statistics, and core pillars.</p>
+            </div>
+            <a href="{{ route('about') }}" target="_blank" class="text-xs font-bold text-blue-950 hover:underline inline-flex items-center space-x-1">
+                <span>View Live Page</span>
+                <span>↗</span>
+            </a>
+        </div>
+
+        <form action="{{ route('admin.content.settings') }}" method="POST" class="space-y-6">
+            @csrf
+
+            <!-- Hero Section -->
+            <div class="space-y-3">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block">1. Hero Section</span>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Top Badge Text</label>
+                        <input type="text" name="about_hero_badge" value="{{ $aboutConfig['hero_badge'] }}" 
+                               class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 outline-none focus:border-blue-950">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Main Heading</label>
+                        <input type="text" name="about_hero_title" value="{{ $aboutConfig['hero_title'] }}" 
+                               class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 outline-none focus:border-blue-950">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Hero Subtitle</label>
+                    <textarea name="about_hero_subtitle" rows="2" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 outline-none focus:border-blue-950">{{ $aboutConfig['hero_subtitle'] }}</textarea>
+                </div>
+            </div>
+
+            <!-- Director's Message & Leadership -->
+            <div class="pt-4 border-t border-slate-100 space-y-3">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block">2. Directorate Communique &amp; Leadership</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Director Full Name</label>
+                        <input type="text" name="about_director_name" value="{{ $aboutConfig['director_name'] }}" 
+                               class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 outline-none focus:border-blue-950">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Director Official Role</label>
+                        <input type="text" name="about_director_role" value="{{ $aboutConfig['director_role'] }}" 
+                               class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 outline-none focus:border-blue-950">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Director Military Background / Bio</label>
+                    <input type="text" name="about_director_bio" value="{{ $aboutConfig['director_bio'] }}" 
+                           class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 outline-none focus:border-blue-950">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Director's Official Message to Cadets</label>
+                    <textarea name="about_director_message" rows="3" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 outline-none focus:border-blue-950">{{ $aboutConfig['director_message'] }}</textarea>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Mission Statement</label>
+                        <textarea name="about_mission_statement" rows="2" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 outline-none focus:border-blue-950">{{ $aboutConfig['mission_statement'] }}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Vision Statement</label>
+                        <textarea name="about_vision_statement" rows="2" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 outline-none focus:border-blue-950">{{ $aboutConfig['vision_statement'] }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Counters -->
+            <div class="pt-4 border-t border-slate-100 space-y-3">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block">3. Milestone Statistics</span>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Stat 1 Value</label>
+                        <input type="text" name="about_stats_selections" value="{{ $aboutConfig['stats_selections'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-1.5">
+                        <label class="block text-[11px] font-semibold text-slate-600 mt-2 mb-1">Stat 1 Label</label>
+                        <input type="text" name="about_stats_selections_label" value="{{ $aboutConfig['stats_selections_label'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-1.5">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Stat 2 Value</label>
+                        <input type="text" name="about_stats_faculty" value="{{ $aboutConfig['stats_faculty'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-1.5">
+                        <label class="block text-[11px] font-semibold text-slate-600 mt-2 mb-1">Stat 2 Label</label>
+                        <input type="text" name="about_stats_faculty_label" value="{{ $aboutConfig['stats_faculty_label'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-1.5">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Stat 3 Value</label>
+                        <input type="text" name="about_stats_centers" value="{{ $aboutConfig['stats_centers'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-1.5">
+                        <label class="block text-[11px] font-semibold text-slate-600 mt-2 mb-1">Stat 3 Label</label>
+                        <input type="text" name="about_stats_centers_label" value="{{ $aboutConfig['stats_centers_label'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-1.5">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Stat 4 Value</label>
+                        <input type="text" name="about_stats_success_rate" value="{{ $aboutConfig['stats_success_rate'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-1.5">
+                        <label class="block text-[11px] font-semibold text-slate-600 mt-2 mb-1">Stat 4 Label</label>
+                        <input type="text" name="about_stats_success_rate_label" value="{{ $aboutConfig['stats_success_rate_label'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-1.5">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Core Pillars -->
+            <div class="pt-4 border-t border-slate-100 space-y-3">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block">4. Four Core Pillars of Training</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
+                        <label class="block text-xs font-bold text-slate-800">Pillar 1 Title &amp; Description</label>
+                        <input type="text" name="about_pillar_1_title" value="{{ $aboutConfig['pillar_1_title'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-md px-2.5 py-1.5">
+                        <textarea name="about_pillar_1_desc" rows="2" class="w-full text-xs bg-white border border-slate-200 rounded-md px-2.5 py-1.5">{{ $aboutConfig['pillar_1_desc'] }}</textarea>
+                    </div>
+
+                    <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
+                        <label class="block text-xs font-bold text-slate-800">Pillar 2 Title &amp; Description</label>
+                        <input type="text" name="about_pillar_2_title" value="{{ $aboutConfig['pillar_2_title'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-md px-2.5 py-1.5">
+                        <textarea name="about_pillar_2_desc" rows="2" class="w-full text-xs bg-white border border-slate-200 rounded-md px-2.5 py-1.5">{{ $aboutConfig['pillar_2_desc'] }}</textarea>
+                    </div>
+
+                    <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
+                        <label class="block text-xs font-bold text-slate-800">Pillar 3 Title &amp; Description</label>
+                        <input type="text" name="about_pillar_3_title" value="{{ $aboutConfig['pillar_3_title'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-md px-2.5 py-1.5">
+                        <textarea name="about_pillar_3_desc" rows="2" class="w-full text-xs bg-white border border-slate-200 rounded-md px-2.5 py-1.5">{{ $aboutConfig['pillar_3_desc'] }}</textarea>
+                    </div>
+
+                    <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
+                        <label class="block text-xs font-bold text-slate-800">Pillar 4 Title &amp; Description</label>
+                        <input type="text" name="about_pillar_4_title" value="{{ $aboutConfig['pillar_4_title'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-md px-2.5 py-1.5">
+                        <textarea name="about_pillar_4_desc" rows="2" class="w-full text-xs bg-white border border-slate-200 rounded-md px-2.5 py-1.5">{{ $aboutConfig['pillar_4_desc'] }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <button type="submit" class="px-5 py-2.5 rounded-lg text-xs font-bold text-white bg-blue-950 hover:bg-blue-900 shadow-2xs transition-colors">
+                    Save About Us Settings
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- TAB 3: Contact & Map Page Configuration -->
+    <div x-show="activeTab === 'contact'" class="bg-white rounded-xl p-5 sm:p-7 border border-slate-200/80 shadow-2xs space-y-6" style="display:none;">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div>
+                <h2 class="text-sm font-semibold text-slate-900">Contact Us &amp; Campus Settings</h2>
+                <p class="text-[11px] text-slate-500">Configure public phone helplines, WhatsApp desk, admissions emails, and interactive map embed.</p>
+            </div>
+            <a href="{{ route('contact') }}" target="_blank" class="text-xs font-bold text-blue-950 hover:underline inline-flex items-center space-x-1">
+                <span>View Live Page</span>
+                <span>↗</span>
+            </a>
+        </div>
+
+        <form action="{{ route('admin.content.settings') }}" method="POST" class="space-y-4">
+            @csrf
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Student Helpline Phone</label>
+                    <input type="text" name="contact_phone" value="{{ $contactConfig['helpline_phone'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 outline-none focus:border-blue-950">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Admissions Cell Phone</label>
+                    <input type="text" name="contact_admission_phone" value="{{ $contactConfig['admission_phone'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 outline-none focus:border-blue-950">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">WhatsApp Cadet Desk</label>
+                    <input type="text" name="contact_whatsapp_phone" value="{{ $contactConfig['whatsapp_phone'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 outline-none focus:border-blue-950">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Official Support Email</label>
+                    <input type="email" name="contact_email" value="{{ $contactConfig['support_email'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 outline-none focus:border-blue-950">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Admissions Desk Email</label>
+                    <input type="email" name="contact_admissions_email" value="{{ $contactConfig['admissions_email'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 outline-none focus:border-blue-950">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Physical Campus Headquarters Address</label>
+                <input type="text" name="contact_address" value="{{ $contactConfig['headquarters_address'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 outline-none focus:border-blue-950">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Office &amp; Counselling Working Hours</label>
+                <input type="text" name="contact_working_hours" value="{{ $contactConfig['working_hours'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 outline-none focus:border-blue-950">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Google Maps Embed URL (iframe src)</label>
+                <input type="text" name="contact_map_embed_url" value="{{ $contactConfig['map_embed_url'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900 outline-none focus:border-blue-950 font-mono text-[11px]">
+            </div>
+
+            <div class="pt-2">
+                <button type="submit" class="px-5 py-2.5 rounded-lg text-xs font-bold text-white bg-blue-950 hover:bg-blue-900 shadow-2xs transition-colors">
+                    Save Contact &amp; Map Settings
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- TAB 4: Privacy & Terms Legal Settings -->
+    <div x-show="activeTab === 'legal'" class="bg-white rounded-xl p-5 sm:p-7 border border-slate-200/80 shadow-2xs space-y-6" style="display:none;">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div>
+                <h2 class="text-sm font-semibold text-slate-900">Privacy Policy &amp; Terms of Service Controls</h2>
+                <p class="text-[11px] text-slate-500">Configure legal dates, Data Protection Officer appointments, jurisdiction, and refund periods.</p>
+            </div>
+            <div class="flex items-center space-x-3 text-xs font-bold">
+                <a href="{{ route('privacy') }}" target="_blank" class="text-blue-950 hover:underline">Privacy Policy ↗</a>
+                <span>•</span>
+                <a href="{{ route('terms') }}" target="_blank" class="text-blue-950 hover:underline">Terms of Service ↗</a>
+            </div>
+        </div>
+
+        <form action="{{ route('admin.content.settings') }}" method="POST" class="space-y-6">
+            @csrf
+
+            <!-- Privacy Policy Config -->
+            <div class="space-y-3">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block">Privacy Policy (DPDP Act 2023)</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Policy Effective Date</label>
+                        <input type="text" name="privacy_effective_date" value="{{ $privacyConfig['effective_date'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Appointed DPO Name</label>
+                        <input type="text" name="privacy_dpo_name" value="{{ $privacyConfig['dpo_name'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">DPO Email</label>
+                        <input type="email" name="privacy_dpo_email" value="{{ $privacyConfig['dpo_email'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">DPO Direct Phone</label>
+                        <input type="text" name="privacy_dpo_phone" value="{{ $privacyConfig['dpo_phone'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">DPO Postal Address</label>
+                    <input type="text" name="privacy_dpo_address" value="{{ $privacyConfig['dpo_address'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900">
+                </div>
+            </div>
+
+            <!-- Terms of Service Config -->
+            <div class="pt-4 border-t border-slate-100 space-y-3">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block">Terms of Service Parameters</span>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Terms Effective Date</label>
+                        <input type="text" name="terms_effective_date" value="{{ $termsConfig['effective_date'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Court Jurisdiction</label>
+                        <input type="text" name="terms_jurisdiction" value="{{ $termsConfig['jurisdiction'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Refund Eligibility Window (Days)</label>
+                        <input type="number" name="terms_refund_period_days" value="{{ $termsConfig['refund_period_days'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Legal Notice Contact Email</label>
+                    <input type="email" name="terms_contact_email" value="{{ $termsConfig['contact_email'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900">
+                </div>
+            </div>
+
+            <div class="pt-2">
+                <button type="submit" class="px-5 py-2.5 rounded-lg text-xs font-bold text-white bg-blue-950 hover:bg-blue-900 shadow-2xs transition-colors">
+                    Save Legal Settings
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- TAB 5: Grievance Redressal Cell Settings -->
+    <div x-show="activeTab === 'grievance'" class="bg-white rounded-xl p-5 sm:p-7 border border-slate-200/80 shadow-2xs space-y-6" style="display:none;">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div>
+                <h2 class="text-sm font-semibold text-slate-900">Statutory Grievance Redressal Cell Configuration</h2>
+                <p class="text-[11px] text-slate-500">Maintain Grievance Officer credentials and statutory resolution SLA timelines under IT Rules 2021.</p>
+            </div>
+            <a href="{{ route('grievances') }}" target="_blank" class="text-xs font-bold text-blue-950 hover:underline inline-flex items-center space-x-1">
+                <span>View Live Grievance Cell</span>
+                <span>↗</span>
+            </a>
+        </div>
+
+        <form action="{{ route('admin.content.settings') }}" method="POST" class="space-y-4">
+            @csrf
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Chief Grievance Officer Name</label>
+                    <input type="text" name="grievance_officer_name" value="{{ $grievanceConfig['officer_name'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Official Designation</label>
+                    <input type="text" name="grievance_officer_designation" value="{{ $grievanceConfig['officer_designation'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Grievance Direct Email</label>
+                    <input type="email" name="grievance_officer_email" value="{{ $grievanceConfig['officer_email'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Grievance Helpline Phone</label>
+                    <input type="text" name="grievance_officer_phone" value="{{ $grievanceConfig['officer_phone'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Grievance Cell Physical Address</label>
+                    <input type="text" name="grievance_officer_address" value="{{ $grievanceConfig['officer_address'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Grievance Cell Working Hours</label>
+                    <input type="text" name="grievance_officer_timings" value="{{ $grievanceConfig['officer_timings'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-900">
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 space-y-3">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block">Service Level Agreement (SLA) Targets</span>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1">Level 1 (Frontline Desk)</label>
+                        <input type="text" name="grievance_sla_level_1" value="{{ $grievanceConfig['sla_level_1'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1">Level 2 (Grievance Officer)</label>
+                        <input type="text" name="grievance_sla_level_2" value="{{ $grievanceConfig['sla_level_2'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1">Level 3 (Directorate Review)</label>
+                        <input type="text" name="grievance_sla_level_3" value="{{ $grievanceConfig['sla_level_3'] }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-2">
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-2">
+                <button type="submit" class="px-5 py-2.5 rounded-lg text-xs font-bold text-white bg-blue-950 hover:bg-blue-900 shadow-2xs transition-colors">
+                    Save Grievance Settings
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- TAB 6: Featured YouTube Video Manager -->
     <div x-show="activeTab === 'video'" 
          x-data="{
             videoUrl: '{{ $featuredVideo['url'] ?? '' }}',
@@ -143,33 +522,29 @@
          }"
          class="space-y-6" style="display:none;">
 
-        <!-- Video Settings Form -->
         <div class="bg-white rounded-xl p-5 sm:p-7 border border-slate-200/80 shadow-2xs space-y-6">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
                 <div>
                     <h2 class="text-sm font-semibold text-slate-900 flex items-center space-x-2">
-                        <span class="w-6 h-6 rounded-md bg-rose-50 text-rose-600 flex items-center justify-center">
-                            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
-                        </span>
-                        <span>Homepage Featured YouTube Video &amp; Academy Tour</span>
+                        <svg class="w-4 h-4 text-rose-600" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+                        <span>Featured YouTube Video Spotlight</span>
                     </h2>
-                    <p class="text-[11px] text-slate-500 mt-0.5">Showcase a professional YouTube orientation, campus drill tour, or demo lecture on the homepage.</p>
+                    <p class="text-[11px] text-slate-500">Controls the interactive academy video modal featured on the home discovery portal.</p>
                 </div>
 
-                <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg {{ ($featuredVideo['enabled'] ?? true) ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/70' : 'bg-slate-100 text-slate-600 border border-slate-200' }} text-xs font-semibold">
-                    <span class="w-2 h-2 rounded-full {{ ($featuredVideo['enabled'] ?? true) ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400' }}"></span>
-                    <span>{{ ($featuredVideo['enabled'] ?? true) ? 'Section Active on Homepage' : 'Section Hidden' }}</span>
-                </div>
+                <a href="{{ route('home') }}#featured-video" target="_blank" class="text-xs font-semibold text-blue-950 hover:underline">
+                    View on Homepage ↗
+                </a>
             </div>
 
-            <form action="{{ route('admin.content.video') }}" method="POST" class="space-y-6">
+            <form action="{{ route('admin.content.video') }}" method="POST" class="space-y-5">
                 @csrf
 
-                <!-- Section Visibility Toggle Switch -->
-                <div class="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+                <!-- Enable / Disable Toggle -->
+                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200">
                     <div>
-                        <h4 class="text-xs font-bold text-slate-900">Enable Featured Video Section</h4>
-                        <p class="text-[11px] text-slate-500">Toggle whether this video section is displayed to students and visitors on the homepage.</p>
+                        <span class="text-xs font-bold text-slate-900 block">Show Video Spotlight on Homepage</span>
+                        <span class="text-[11px] text-slate-500">Toggle whether the featured video card is visible to aspirants.</span>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" name="home_video_enabled" value="1" {{ ($featuredVideo['enabled'] ?? true) ? 'checked' : '' }} class="sr-only peer">
@@ -177,144 +552,63 @@
                     </label>
                 </div>
 
-                <!-- Video Link & YouTube ID Extraction -->
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                    <div class="lg:col-span-8 space-y-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">
-                                YouTube Video URL or Video ID <span class="text-rose-500">*</span>
-                            </label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                                    <svg class="w-4 h-4 text-rose-500" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
-                                </span>
-                                <input type="text" 
-                                       name="home_video_url" 
-                                       x-model="videoUrl"
-                                       placeholder="e.g. https://www.youtube.com/watch?v=ScMzIvxBSi4 or ScMzIvxBSi4" 
-                                       class="w-full text-xs sm:text-sm bg-white border border-slate-200 rounded-lg pl-9 pr-3.5 py-2.5 text-slate-900 outline-none focus:border-blue-950 focus:ring-1 focus:ring-blue-950/20 shadow-2xs transition-colors">
-                            </div>
-                            <p class="text-[11px] text-slate-400 mt-1">Accepts standard YouTube links (<code class="text-slate-600 bg-slate-100 px-1 py-0.5 rounded">youtube.com/watch?v=...</code>, <code class="text-slate-600 bg-slate-100 px-1 py-0.5 rounded">youtu.be/...</code>, Shorts, or direct 11-char Video ID).</p>
-                        </div>
-
-                        <!-- Section Badge & Title -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Section Eyebrow Badge</label>
-                                <input type="text" name="home_video_badge" value="{{ $featuredVideo['badge'] ?? 'INSIDE NIRMAAN ACADEMY' }}" 
-                                       class="w-full text-xs sm:text-sm bg-white border border-slate-200 rounded-lg px-3.5 py-2 text-slate-900 outline-none focus:border-blue-950 focus:ring-1 focus:ring-blue-950/20 shadow-2xs transition-colors">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Primary CTA Button Label</label>
-                                <input type="text" name="home_video_cta_text" value="{{ $featuredVideo['cta_text'] ?? 'Explore All Courses' }}" 
-                                       class="w-full text-xs sm:text-sm bg-white border border-slate-200 rounded-lg px-3.5 py-2 text-slate-900 outline-none focus:border-blue-950 focus:ring-1 focus:ring-blue-950/20 shadow-2xs transition-colors">
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Section Headline Title</label>
-                            <input type="text" name="home_video_title" value="{{ $featuredVideo['title'] ?? 'Experience Training, Drills & Classroom Life at Nirmaan' }}" 
-                                   class="w-full text-xs sm:text-sm bg-white border border-slate-200 rounded-lg px-3.5 py-2 text-slate-900 font-semibold outline-none focus:border-blue-950 focus:ring-1 focus:ring-blue-950/20 shadow-2xs transition-colors">
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Supporting Subtitle Description</label>
-                            <textarea name="home_video_subtitle" rows="2" 
-                                      class="w-full text-xs sm:text-sm bg-white border border-slate-200 rounded-lg px-3.5 py-2 text-slate-900 outline-none focus:border-blue-950 focus:ring-1 focus:ring-blue-950/20 shadow-2xs transition-colors">{{ $featuredVideo['subtitle'] ?? 'Get an exclusive inside look at our smart digital classrooms, physical obstacle grounds, and SSB interview chambers guided by former defence officers.' }}</textarea>
-                        </div>
-
-                        <!-- 3 Feature Highlights -->
-                        <div class="pt-2">
-                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Key Highlights / Pillars (Shown below video or copy)</label>
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                <div>
-                                    <span class="text-[10px] text-slate-400 block mb-0.5">Highlight 1</span>
-                                    <input type="text" name="home_video_highlight_1" value="{{ $featuredVideo['highlight_1'] ?? 'Ex-Officers & SSB Assessors Mentorship' }}" 
-                                           class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-slate-900 outline-none focus:border-blue-950 shadow-2xs">
-                                </div>
-                                <div>
-                                    <span class="text-[10px] text-slate-400 block mb-0.5">Highlight 2</span>
-                                    <input type="text" name="home_video_highlight_2" value="{{ $featuredVideo['highlight_2'] ?? 'Complete Written & Physical Ground Prep' }}" 
-                                           class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-slate-900 outline-none focus:border-blue-950 shadow-2xs">
-                                </div>
-                                <div>
-                                    <span class="text-[10px] text-slate-400 block mb-0.5">Highlight 3</span>
-                                    <input type="text" name="home_video_highlight_3" value="{{ $featuredVideo['highlight_3'] ?? 'Digital Live & Recorded HD Lectures' }}" 
-                                           class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-slate-900 outline-none focus:border-blue-950 shadow-2xs">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1.5">CTA Button Destination URL</label>
-                                <input type="text" name="home_video_cta_url" value="{{ $featuredVideo['cta_url'] ?? '' }}" placeholder="Leave blank to default to /courses" 
-                                       class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3.5 py-2 text-slate-900 outline-none focus:border-blue-950 shadow-2xs">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Custom Poster Image URL (Optional)</label>
-                                <input type="text" name="home_video_thumbnail" x-model="customThumbnail" placeholder="Leave empty for auto YouTube thumbnail" 
-                                       class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3.5 py-2 text-slate-900 outline-none focus:border-blue-950 shadow-2xs">
-                            </div>
-                        </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">YouTube Video URL <span class="text-red-500">*</span></label>
+                        <input type="url" name="home_video_url" x-model="videoUrl" required
+                               placeholder="https://www.youtube.com/watch?v=..."
+                               class="w-full text-xs sm:text-sm bg-white border border-slate-200 rounded-lg px-3.5 py-2 text-slate-900 outline-none focus:border-blue-950 focus:ring-1 focus:ring-blue-950/20 shadow-2xs transition-colors">
                     </div>
-
-                    <!-- Live Dynamic Preview Column -->
-                    <div class="lg:col-span-4 bg-slate-50 rounded-xl p-4 border border-slate-200/80 flex flex-col justify-between">
-                        <div>
-                            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-2">Live Thumbnail Preview</span>
-                            
-                            <!-- Video Card Preview Frame -->
-                            <div class="relative rounded-xl overflow-hidden aspect-video bg-slate-900 border border-slate-200 shadow-sm group">
-                                <img :src="previewThumbnail" alt="Video Preview" class="w-full h-full object-cover">
-                                <div class="absolute inset-0 bg-slate-950/40 flex items-center justify-center">
-                                    <div class="w-12 h-12 rounded-full bg-white/95 text-rose-600 flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
-                                        <svg class="w-6 h-6 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                                    </div>
-                                </div>
-                                <div class="absolute bottom-2 left-2 right-2 flex items-center justify-between text-white text-[10px] bg-slate-950/70 backdrop-blur-xs px-2 py-1 rounded">
-                                    <span class="font-mono">YouTube HD</span>
-                                    <span class="font-mono" x-text="extractId(videoUrl) ? 'ID: ' + extractId(videoUrl) : 'Invalid URL'"></span>
-                                </div>
-                            </div>
-
-                            <div class="mt-3 space-y-1">
-                                <span class="text-[10px] font-bold text-amber-600 uppercase tracking-widest block" x-text="'PREVIEW'"></span>
-                                <p class="text-xs font-bold text-slate-800 line-clamp-2">{{ $featuredVideo['title'] ?? 'Training Life at Nirmaan' }}</p>
-                            </div>
-                        </div>
-
-                        <div class="pt-4 border-t border-slate-200/60 mt-4">
-                            <p class="text-[10px] text-slate-400">The player uses responsive 16:9 aspect ratio and privacy-enhanced YouTube embed mode.</p>
-                        </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Badge Tagline</label>
+                        <input type="text" name="home_video_badge" value="{{ $featuredVideo['badge'] ?? 'INSIDE NIRMAAN ACADEMY' }}" 
+                               class="w-full text-xs sm:text-sm bg-white border border-slate-200 rounded-lg px-3.5 py-2 text-slate-900 outline-none focus:border-blue-950 focus:ring-1 focus:ring-blue-950/20 shadow-2xs transition-colors">
                     </div>
                 </div>
 
-                <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
-                    <button type="submit" class="px-6 py-2.5 rounded-lg text-xs font-bold text-white bg-blue-950 hover:bg-blue-900 shadow-2xs transition-colors flex items-center space-x-2">
-                        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        <span>Save Featured Video Settings</span>
-                    </button>
-                    <a href="{{ route('home') }}#featured-video" target="_blank" class="text-xs font-semibold text-blue-950 hover:underline inline-flex items-center space-x-1">
-                        <span>View on Homepage</span>
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                    </a>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Headline Title</label>
+                    <input type="text" name="home_video_title" value="{{ $featuredVideo['title'] ?? 'Experience Training, Drills & Classroom Life at Nirmaan' }}" 
+                           class="w-full text-xs sm:text-sm bg-white border border-slate-200 rounded-lg px-3.5 py-2 text-slate-900 outline-none focus:border-blue-950 focus:ring-1 focus:ring-blue-950/20 shadow-2xs transition-colors">
                 </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Supporting Subtitle</label>
+                    <textarea name="home_video_subtitle" rows="2" class="w-full text-xs sm:text-sm bg-white border border-slate-200 rounded-lg px-3.5 py-2 text-slate-900 outline-none focus:border-blue-950">{{ $featuredVideo['subtitle'] ?? '' }}</textarea>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Highlight 1</label>
+                        <input type="text" name="home_video_highlight_1" value="{{ $featuredVideo['highlight_1'] ?? '' }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-1.5">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Highlight 2</label>
+                        <input type="text" name="home_video_highlight_2" value="{{ $featuredVideo['highlight_2'] ?? '' }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-1.5">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Highlight 3</label>
+                        <input type="text" name="home_video_highlight_3" value="{{ $featuredVideo['highlight_3'] ?? '' }}" class="w-full text-xs bg-white border border-slate-200 rounded-lg px-3 py-1.5">
+                    </div>
+                </div>
+
+                <button type="submit" class="px-5 py-2.5 rounded-lg text-xs font-bold text-white bg-blue-950 hover:bg-blue-900 shadow-2xs transition-colors">
+                    Save Featured Video Settings
+                </button>
             </form>
         </div>
     </div>
 
-    <!-- Tab 2: FAQs Manager -->
-    <div x-show="activeTab === 'faqs'" class="space-y-5" style="display:none;">
-        <!-- Add FAQ Form -->
-        <div class="bg-white rounded-xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-4">
-            <h3 class="text-sm font-semibold text-slate-900">+ Create FAQ Question</h3>
+    <!-- TAB 7: FAQ Accordion Manager -->
+    <div x-show="activeTab === 'faqs'" class="space-y-6" style="display:none;">
+        <div class="bg-white rounded-xl p-5 sm:p-7 border border-slate-200/80 shadow-2xs space-y-4">
+            <h2 class="text-sm font-semibold text-slate-900">Add New FAQ Accordion Question</h2>
             <form action="{{ route('admin.content.faqs.store') }}" method="POST" class="space-y-4">
                 @csrf
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div class="sm:col-span-2">
-                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Question Prompt <span class="text-red-500">*</span></label>
-                        <input type="text" name="question" required placeholder="e.g. Can I take mock tests without an internet connection?" 
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Question Title <span class="text-red-500">*</span></label>
+                        <input type="text" name="question" required placeholder="e.g. Can 12th appearing candidates register for the NDA batch?" 
                                class="w-full text-xs sm:text-sm bg-white border border-slate-200 rounded-lg px-3.5 py-2 text-slate-900 outline-none focus:border-blue-950 focus:ring-1 focus:ring-blue-950/20 shadow-2xs transition-colors">
                     </div>
                     <div>
@@ -363,61 +657,95 @@
         </div>
     </div>
 
-    <!-- Tab 3: Contact Inquiries -->
-    <div x-show="activeTab === 'inquiries'" class="bg-white rounded-xl border border-slate-200/80 overflow-hidden shadow-2xs" style="display:none;">
-        <div class="overflow-x-auto w-full">
-            <table class="w-full text-left text-xs text-slate-600">
-                <thead class="bg-slate-50/75 text-slate-500 uppercase text-[10px] font-semibold tracking-wider border-b border-slate-200/80">
-                    <tr>
-                        <th class="px-4 py-2.5 whitespace-nowrap">Sender Cadet</th>
-                        <th class="px-4 py-2.5 whitespace-nowrap">Inquiry Subject &amp; Note</th>
-                        <th class="px-4 py-2.5 whitespace-nowrap">Contact Phone</th>
-                        <th class="px-4 py-2.5 whitespace-nowrap">Received Date</th>
-                        <th class="px-4 py-2.5 whitespace-nowrap">Status</th>
-                        <th class="px-4 py-2.5 whitespace-nowrap text-right">Action</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    @forelse($inquiries as $inq)
-                        <tr class="hover:bg-slate-50/70 transition-colors">
-                            <td class="px-4 py-3 font-semibold text-slate-900 whitespace-nowrap">
-                                {{ $inq->name }}
-                                <span class="text-[10px] text-slate-400 font-normal block">{{ $inq->email }}</span>
-                            </td>
-                            <td class="px-4 py-3 max-w-sm">
-                                <strong class="text-slate-900 block font-semibold">{{ $inq->subject }}</strong>
-                                <span class="text-slate-500 line-clamp-2 mt-0.5">{{ $inq->message }}</span>
-                            </td>
-                            <td class="px-4 py-3 font-mono font-medium text-slate-700 whitespace-nowrap">{{ $inq->phone ?? 'N/A' }}</td>
-                            <td class="px-4 py-3 text-slate-400 whitespace-nowrap text-[11px]">{{ $inq->created_at->format('d M, Y') }}</td>
-                            <td class="px-4 py-3 whitespace-nowrap">
-                                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-medium uppercase {{ $inq->status === 'new' ? 'bg-amber-50 text-amber-700 border border-amber-200/60' : 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' }}">
-                                    <span class="w-1.5 h-1.5 rounded-full {{ $inq->status === 'new' ? 'bg-amber-500' : 'bg-emerald-500' }}"></span>
-                                    <span>{{ $inq->status === 'new' ? 'New' : 'Handled' }}</span>
-                                </span>
-                            </td>
-                            <td class="px-4 py-3 whitespace-nowrap text-right">
-                                <form action="{{ route('admin.content.inquiries.toggle', $inq->id) }}" method="POST">
-                                    @csrf
-                                    <button type="submit" class="px-2.5 py-1 rounded-md text-xs font-medium text-slate-700 hover:text-blue-950 bg-white hover:bg-slate-50 border border-slate-200 transition-colors shadow-2xs">
-                                        {{ $inq->status === 'new' ? 'Mark Handled' : 'Mark New' }}
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="6" class="py-12 text-center text-xs text-slate-400 whitespace-nowrap">No candidate contact messages recorded.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        @if($inquiries->hasPages())
-            <div class="p-3 border-t border-slate-200/80 bg-slate-50/50">
-                {{ $inquiries->links() }}
+    <!-- TAB 8: Inquiries & Grievances Dockets -->
+    <div x-show="activeTab === 'inquiries'" class="space-y-4" style="display:none;">
+        
+        <!-- Filter Bar -->
+        <div class="bg-white rounded-xl p-3.5 border border-slate-200/80 shadow-2xs flex items-center justify-between">
+            <div class="flex items-center space-x-2 text-xs">
+                <span class="text-slate-400 font-bold uppercase text-[10px]">Filter Type:</span>
+                <a href="{{ route('admin.content.index', ['tab' => 'inquiries']) }}" 
+                   class="px-2.5 py-1 rounded-md font-bold {{ !request('type') ? 'bg-blue-950 text-white' : 'text-slate-600 hover:bg-slate-100' }}">
+                    All Messages
+                </a>
+                <a href="{{ route('admin.content.index', ['tab' => 'inquiries', 'type' => 'inquiry']) }}" 
+                   class="px-2.5 py-1 rounded-md font-bold {{ request('type') === 'inquiry' ? 'bg-blue-950 text-white' : 'text-slate-600 hover:bg-slate-100' }}">
+                    General Inquiries
+                </a>
+                <a href="{{ route('admin.content.index', ['tab' => 'inquiries', 'type' => 'grievance']) }}" 
+                   class="px-2.5 py-1 rounded-md font-bold {{ request('type') === 'grievance' ? 'bg-amber-900 text-white' : 'text-slate-600 hover:bg-slate-100' }}">
+                    ⚖️ Formal Grievances
+                </a>
             </div>
-        @endif
+
+            <span class="text-xs text-slate-400 font-mono">Total: {{ $inquiries->total() }}</span>
+        </div>
+
+        <!-- Inquiries / Grievances Table -->
+        <div class="bg-white rounded-xl border border-slate-200/80 overflow-hidden shadow-2xs">
+            <div class="overflow-x-auto w-full">
+                <table class="w-full text-left text-xs text-slate-600">
+                    <thead class="bg-slate-50/75 text-slate-500 uppercase text-[10px] font-semibold tracking-wider border-b border-slate-200/80">
+                        <tr>
+                            <th class="px-4 py-2.5 whitespace-nowrap">Ticket / Type</th>
+                            <th class="px-4 py-2.5 whitespace-nowrap">Sender Cadet</th>
+                            <th class="px-4 py-2.5 whitespace-nowrap">Subject &amp; Message</th>
+                            <th class="px-4 py-2.5 whitespace-nowrap">Phone</th>
+                            <th class="px-4 py-2.5 whitespace-nowrap">Date</th>
+                            <th class="px-4 py-2.5 whitespace-nowrap">Status</th>
+                            <th class="px-4 py-2.5 whitespace-nowrap text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @forelse($inquiries as $inq)
+                            <tr class="hover:bg-slate-50/70 transition-colors">
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <span class="font-mono text-xs font-bold text-slate-900 block">
+                                        #{{ $inq->ticket_number ?? 'INQ-' . $inq->id }}
+                                    </span>
+                                    <span class="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase {{ ($inq->type ?? 'inquiry') === 'grievance' ? 'bg-amber-100 text-amber-900 border border-amber-200' : 'bg-blue-50 text-blue-900 border border-blue-200' }}">
+                                        {{ ($inq->type ?? 'inquiry') === 'grievance' ? '⚖️ Grievance' : '📩 Inquiry' }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 font-semibold text-slate-900 whitespace-nowrap">
+                                    {{ $inq->name }}
+                                    <span class="text-[10px] text-slate-400 font-normal block">{{ $inq->email }}</span>
+                                </td>
+                                <td class="px-4 py-3 max-w-sm">
+                                    <strong class="text-slate-900 block font-semibold">{{ $inq->subject }}</strong>
+                                    <span class="text-slate-500 line-clamp-2 mt-0.5">{{ $inq->message }}</span>
+                                </td>
+                                <td class="px-4 py-3 font-mono font-medium text-slate-700 whitespace-nowrap">{{ $inq->phone ?? 'N/A' }}</td>
+                                <td class="px-4 py-3 text-slate-400 whitespace-nowrap text-[11px]">{{ $inq->created_at->format('d M, Y H:i') }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-medium uppercase {{ $inq->status === 'new' ? 'bg-amber-50 text-amber-700 border border-amber-200/60' : 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' }}">
+                                        <span class="w-1.5 h-1.5 rounded-full {{ $inq->status === 'new' ? 'bg-amber-500' : 'bg-emerald-500' }}"></span>
+                                        <span>{{ $inq->status === 'new' ? 'Pending' : 'Resolved' }}</span>
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-right">
+                                    <form action="{{ route('admin.content.inquiries.toggle', $inq->id) }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="px-2.5 py-1 rounded-md text-xs font-medium text-slate-700 hover:text-blue-950 bg-white hover:bg-slate-50 border border-slate-200 transition-colors shadow-2xs">
+                                            {{ $inq->status === 'new' ? 'Mark Resolved' : 'Mark Pending' }}
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="py-12 text-center text-xs text-slate-400 whitespace-nowrap">No messages recorded in this category.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            @if($inquiries->hasPages())
+                <div class="p-3 border-t border-slate-200/80 bg-slate-50/50">
+                    {{ $inquiries->links() }}
+                </div>
+            @endif
+        </div>
     </div>
 
 </div>

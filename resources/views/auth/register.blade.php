@@ -225,7 +225,7 @@
                                x-model="termsAccepted" 
                                class="rounded border-slate-300 text-blue-950 focus:ring-blue-950 mt-0.5">
                         <span class="leading-relaxed">
-                            I agree to the <a href="{{ route('about') }}" target="_blank" class="text-blue-950 font-semibold hover:underline">Code of Conduct</a>, <a href="{{ route('about') }}" target="_blank" class="text-blue-950 font-semibold hover:underline">Terms of Service</a> &amp; Academy Privacy Policy.
+                            I agree to the <a href="{{ route('terms') }}" target="_blank" class="text-blue-950 font-semibold hover:underline">Code of Conduct</a>, <a href="{{ route('terms') }}" target="_blank" class="text-blue-950 font-semibold hover:underline">Terms of Service</a> &amp; <a href="{{ route('privacy') }}" target="_blank" class="text-blue-950 font-semibold hover:underline">Academy Privacy Policy</a>.
                         </span>
                     </label>
                 </div>
@@ -245,7 +245,7 @@
             </form>
 
             <div class="flex  flex-col mt-6 pt-5 border-t border-slate-100 text-center text-xs text-slate-500">
-                Already registered with Nirmaan Academy? 
+                Already registered ? 
                 <a href="{{ route('login') }}" class="font-semibold text-blue-950 hover:underline ml-1">
                     Sign In Here 
                 </a>

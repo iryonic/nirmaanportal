@@ -13,6 +13,7 @@ use App\Models\SiteSetting;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class HomeController extends Controller
 {
@@ -84,12 +85,20 @@ class HomeController extends Controller
 
     public function about()
     {
-        return view('pages.about');
+        $aboutConfig = SiteSetting::getAboutConfig();
+        $realStudents = User::where('role', 'student')->count();
+        $realMockTests = MockTest::where('is_published', true)->count();
+        $categories = ExamCategory::where('is_active', true)->orderBy('sort_order')->take(6)->get();
+
+        return view('pages.about', compact('aboutConfig', 'realStudents', 'realMockTests', 'categories'));
     }
 
     public function contact()
     {
-        return view('pages.contact');
+        $contactConfig = SiteSetting::getContactConfig();
+        $faqs = Faq::where('is_active', true)->orderBy('sort_order')->take(5)->get();
+
+        return view('pages.contact', compact('contactConfig', 'faqs'));
     }
 
     public function submitContact(Request $request)
@@ -98,13 +107,82 @@ class HomeController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
+            'inquiry_type' => ['nullable', 'string', 'max:50'],
             'subject' => ['required', 'string', 'max:255'],
             'message' => ['required', 'string', 'max:2000'],
         ]);
 
-        ContactInquiry::create($validated);
+        $inquiryType = $validated['inquiry_type'] ?? 'General Enquiry';
+        $fullSubject = "[{$inquiryType}] " . $validated['subject'];
 
-        return back()->with('success', 'Thank you for reaching out! A Nirmaan academic counsellor will contact you shortly.');
+        $ticketNumber = 'INQ-' . date('ymd') . '-' . strtoupper(Str::random(4));
+
+        ContactInquiry::create([
+            'ticket_number' => $ticketNumber,
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+            'type' => 'inquiry',
+            'subject' => $fullSubject,
+            'message' => $validated['message'],
+            'status' => 'new',
+        ]);
+
+        return back()->with('success', "Thank you for reaching out! Your inquiry reference is #{$ticketNumber}. A Nirmaan academic counsellor will contact you shortly.");
+    }
+
+    public function privacy()
+    {
+        $privacyConfig = SiteSetting::getPrivacyConfig();
+        $contactConfig = SiteSetting::getContactConfig();
+
+        return view('pages.privacy', compact('privacyConfig', 'contactConfig'));
+    }
+
+    public function terms()
+    {
+        $termsConfig = SiteSetting::getTermsConfig();
+        $contactConfig = SiteSetting::getContactConfig();
+
+        return view('pages.terms', compact('termsConfig', 'contactConfig'));
+    }
+
+    public function grievances()
+    {
+        $grievanceConfig = SiteSetting::getGrievanceConfig();
+        $contactConfig = SiteSetting::getContactConfig();
+
+        return view('pages.grievances', compact('grievanceConfig', 'contactConfig'));
+    }
+
+    public function submitGrievance(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255'],
+            'phone' => ['required', 'string', 'max:20'],
+            'cadet_roll' => ['nullable', 'string', 'max:50'],
+            'category' => ['required', 'string', 'max:100'],
+            'subject' => ['required', 'string', 'max:255'],
+            'message' => ['required', 'string', 'max:3000'],
+        ]);
+
+        $ticketNumber = 'GRV-' . date('ymd') . '-' . strtoupper(Str::random(4));
+        $cadetNote = !empty($validated['cadet_roll']) ? " [Roll/Order: {$validated['cadet_roll']}]" : '';
+        $fullSubject = "[GRIEVANCE: {$validated['category']}]{$cadetNote} {$validated['subject']}";
+
+        ContactInquiry::create([
+            'ticket_number' => $ticketNumber,
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'],
+            'type' => 'grievance',
+            'subject' => $fullSubject,
+            'message' => $validated['message'],
+            'status' => 'new',
+        ]);
+
+        return back()->with('success', "Your formal grievance has been filed with the Grievance Redressal Cell under Docket #{$ticketNumber}. An acknowledgment has been generated and our Grievance Officer will review within the statutory SLA timeline.");
     }
 
     public function announcements(Request $request)

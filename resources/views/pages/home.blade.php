@@ -372,7 +372,7 @@
             <div class="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
                 <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-rose-50 border border-rose-200/80 text-rose-700 text-xs font-bold mb-3 shadow-2xs">
                     <span class="w-2 h-2 rounded-full bg-rose-600 animate-pulse"></span>
-                    <span class="uppercase tracking-wider">{{ $featuredVideo['badge'] ?? 'INSIDE NIRMAAN ACADEMY' }}</span>
+                    <span class="uppercase tracking-wider">{{ $featuredVideo['badge'] ?? 'Inside Nirmaan Academy ' }}</span>
                 </div>
                 <h2 class="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
                     {{ $featuredVideo['title'] ?? 'Experience Training, Drills & Classroom Life at Nirmaan' }}

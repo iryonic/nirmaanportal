@@ -45,11 +45,11 @@
         <div class="pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
             <p>© {{ date('Y') }} Nirmaan Defence Prep Institute. All rights reserved.</p>
             <div class="flex items-center space-x-4 text-slate-500">
-                <a href="{{ route('about') }}" class="hover:text-slate-900 transition-colors">Privacy Policy</a>
+                <a href="{{ route('privacy') }}" class="hover:text-slate-900 transition-colors">Privacy Policy</a>
                 <span class="text-slate-300">•</span>
-                <a href="{{ route('about') }}" class="hover:text-slate-900 transition-colors">Terms of Service</a>
+                <a href="{{ route('terms') }}" class="hover:text-slate-900 transition-colors">Terms of Service</a>
                 <span class="text-slate-300">•</span>
-                <a href="{{ route('contact') }}" class="hover:text-slate-900 transition-colors">Help &amp; Grievances</a>
+                <a href="{{ route('grievances') }}" class="hover:text-slate-900 transition-colors">Help &amp; Grievances</a>
             </div>
             <p class="font-bold">Powered By <a href="saastify.fmmedianetwork.com" target="_blank" rel="noopener noreferrer" class="text-blue-950">Saatify</a></p>
         </div>
