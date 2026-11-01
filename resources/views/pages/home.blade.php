@@ -171,20 +171,10 @@
                  class="relative h-[450px] sm:h-[480px] bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden marquee-container group">
                 
                 <!-- Top & Bottom Gradient Masks for Smooth Dissolve -->
-                <div class="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-white via-white/80 to-transparent z-20"></div>
-                <div class="pointer-events-none absolute inset-x-0 bottom-12 h-16 bg-gradient-to-t from-white via-white/80 to-transparent z-20"></div>
+                <div class="pointer-events-none absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white via-white/80 to-transparent z-20"></div>
+                <div class="pointer-events-none absolute inset-x-0 bottom-12 h-10 bg-gradient-to-t from-white via-white/80 to-transparent z-20"></div>
 
-                <!-- Floating Marquee Status / Pause Controller Badge -->
-                <div class="absolute top-3.5 right-4 z-30 flex items-center space-x-2">
-                    <button @click="isPaused = !isPaused" 
-                            type="button"
-                            title="Click to toggle auto-scroll pause/play"
-                            class="px-3 py-1 rounded-full text-[10px] font-semibold tracking-wider uppercase transition-all duration-200 flex items-center space-x-1.5 shadow-2xs backdrop-blur-xs cursor-pointer"
-                            :class="isPaused ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-slate-900/85 hover:bg-slate-950 text-white border border-slate-700/60'">
-                        <span class="w-1.5 h-1.5 rounded-full" :class="isPaused ? 'bg-amber-500' : 'bg-emerald-400 animate-ping'"></span>
-                        <span x-text="isPaused ? 'Paused (Click to Resume)' : 'Live Feed • Hover to Pause'"></span>
-                    </button>
-                </div>
+             
 
                 @if(isset($latestNotifications) && $latestNotifications->count() > 0)
                     <!-- Vertical Marquee Scrolling Track (Rendered twice for seamless loop) -->
