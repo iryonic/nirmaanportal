@@ -116,7 +116,7 @@
             <!-- Group: Examination Engine -->
             <div class="space-y-0.5">
                 <div x-show="!sidebarCollapsed" class="px-2 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Testing
+                    Tests
                 </div>
 
                 <a href="{{ route('admin.questions.index') }}" 
@@ -147,7 +147,7 @@
             <!-- Group: Cadets & Finance -->
             <div class="space-y-0.5">
                 <div x-show="!sidebarCollapsed" class="px-2 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Cadets &amp; Finance
+                   Users &amp; Finance
                 </div>
 
                 <a href="{{ route('admin.students.index') }}" 
@@ -156,7 +156,7 @@
                     <svg class="w-6 h-6 shrink-0 {{ request()->routeIs('admin.students.*') ? 'text-white' : 'text-slate-400 group-hover:text-white' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                     </svg>
-                    <span x-show="!sidebarCollapsed" class="truncate">Cadets Roster</span>
+                    <span x-show="!sidebarCollapsed" class="truncate">Users</span>
                     @if(request()->routeIs('admin.students.*'))
                         <span x-show="!sidebarCollapsed" class="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400"></span>
                     @endif
@@ -168,7 +168,7 @@
                     <svg class="w-6 h-6 shrink-0 {{ request()->routeIs('admin.orders.*') ? 'text-white' : 'text-slate-400 group-hover:text-white' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
                     </svg>
-                    <span x-show="!sidebarCollapsed" class="truncate">Orders &amp; Audits</span>
+                    <span x-show="!sidebarCollapsed" class="truncate">Orders</span>
                     @if(request()->routeIs('admin.orders.*'))
                         <span x-show="!sidebarCollapsed" class="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400"></span>
                     @endif

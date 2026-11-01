@@ -728,5 +728,7 @@ class DatabaseSeeder extends Seeder
         foreach ($settings as $k => $v) {
             SiteSetting::set($k, $v);
         }
+
+        $this->call(PracticeQuestionsSeeder::class);
     }
 }
