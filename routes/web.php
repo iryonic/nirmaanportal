@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\OrderManagementController;
 use App\Http\Controllers\Admin\ContentManagementController;
 use App\Http\Controllers\Admin\NotificationManagementController;
 use App\Http\Controllers\Admin\ResourceManagementController;
+use App\Http\Controllers\Admin\CouponManagementController;
 use App\Http\Controllers\Admin\PaymentSettingController;
 use App\Http\Controllers\WebhookController;
 
@@ -139,6 +140,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     // Order & Financial Audits
     Route::get('/orders', [OrderManagementController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderManagementController::class, 'show'])->name('orders.show');
+
+    // Coupon & Scholarship Discounts Management
+    Route::resource('coupons', CouponManagementController::class);
+    Route::post('/coupons/{coupon}/toggle', [CouponManagementController::class, 'toggleStatus'])->name('coupons.toggle');
 
     // Site Content & Settings Management
     Route::get('/content', [ContentManagementController::class, 'index'])->name('content.index');

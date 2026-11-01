@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class SiteSetting extends Model
 {
@@ -69,6 +70,51 @@ class SiteSetting extends Model
             'cta_text' => static::get('home_video_cta_text', 'Explore All Courses'),
             'cta_url' => static::get('home_video_cta_url', ''),
             'thumbnail' => static::get('home_video_thumbnail') ?: "https://img.youtube.com/vi/{$videoId}/maxresdefault.jpg",
+        ];
+    }
+
+    /**
+     * Get comprehensive dynamic payment gateways, direct UPI, bank transfer, and methods configuration.
+     */
+    public static function getPaymentConfig(): array
+    {
+        $qrPath = static::get('upi_qr_image');
+        $qrImageUrl = ($qrPath && Storage::disk('public')->exists($qrPath))
+            ? Storage::disk('public')->url($qrPath)
+            : null;
+
+        return [
+            'upi' => [
+                'enabled' => filter_var(static::get('upi_enabled', '1'), FILTER_VALIDATE_BOOLEAN),
+                'vpa' => static::get('upi_vpa', 'nirmaanacademy@icici'),
+                'merchant_name' => static::get('upi_merchant_name', 'Nirmaan Defence Academy'),
+                'qr_image_url' => $qrImageUrl,
+                'instructions' => static::get('upi_instructions', 'Scan QR code with any UPI app (GPay, PhonePe, Paytm, BHIM) or pay directly to the verified VPA.'),
+            ],
+            'bank' => [
+                'enabled' => filter_var(static::get('bank_transfer_enabled', '1'), FILTER_VALIDATE_BOOLEAN),
+                'bank_name' => static::get('bank_name', 'State Bank of India'),
+                'account_name' => static::get('bank_account_name', 'Nirmaan Academy Educational Foundation'),
+                'account_number' => static::get('bank_account_number', '4092101004521'),
+                'ifsc_code' => static::get('bank_ifsc_code', 'SBIN0001234'),
+                'branch' => static::get('bank_branch', 'Defence Cantt Branch, Jaipur'),
+                'instructions' => static::get('bank_instructions', 'Transfer via IMPS/NEFT/RTGS and submit your 12-digit UTR transaction reference.'),
+            ],
+            'card' => [
+                'enabled' => filter_var(static::get('method_card_enabled', '1'), FILTER_VALIDATE_BOOLEAN),
+            ],
+            'netbanking' => [
+                'enabled' => filter_var(static::get('method_netbanking_enabled', '1'), FILTER_VALIDATE_BOOLEAN),
+            ],
+            'emi' => [
+                'enabled' => filter_var(static::get('method_emi_enabled', '1'), FILTER_VALIDATE_BOOLEAN),
+            ],
+            'offline' => [
+                'enabled' => filter_var(static::get('method_offline_enabled', '1'), FILTER_VALIDATE_BOOLEAN),
+                'campus_address' => static::get('offline_campus_address', 'Nirmaan Defence Academy, Officer Training Campus, Plot 42, Civil Lines'),
+                'contact_phone' => static::get('offline_contact_phone', '+91 98765 43210'),
+                'instructions' => static::get('offline_instructions', 'Visit our academy admissions desk during working hours (9 AM - 6 PM) to finalize registration in cash or DD.'),
+            ],
         ];
     }
 }

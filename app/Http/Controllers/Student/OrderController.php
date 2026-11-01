@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
+use App\Models\Coupon;
 use App\Models\Course;
 use App\Models\Enrollment;
 use App\Models\MockTest;
 use App\Models\Order;
+use App\Models\SiteSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -52,13 +54,15 @@ class OrderController extends Controller
         $type = $request->input('type', 'course');
         $itemId = $request->input('item_id');
 
-        $basePrice = 0;
-        if ($type === 'course') {
-            $course = Course::find($itemId);
-            $basePrice = $course ? (float) $course->price : 0;
-        } else {
-            $test = MockTest::find($itemId);
-            $basePrice = $test ? (float) ($test->price > 0 ? $test->price : 499.00) : 0;
+        $basePrice = (float) $request->input('base_price', 0);
+        if ($basePrice <= 0 && $itemId) {
+            if ($type === 'course') {
+                $course = Course::find($itemId);
+                $basePrice = $course ? (float) $course->price : 0;
+            } else {
+                $test = MockTest::find($itemId);
+                $basePrice = $test ? (float) ($test->price > 0 ? $test->price : 499.00) : 0;
+            }
         }
 
         if (empty($code)) {
@@ -68,6 +72,35 @@ class OrderController extends Controller
             ], 422);
         }
 
+        // 1. Check Dynamic Database Coupon
+        $dbCoupon = Coupon::where('code', $code)->first();
+        if ($dbCoupon) {
+            $check = $dbCoupon->isValidForAmount($basePrice);
+            if (!$check['valid']) {
+                return response()->json([
+                    'valid' => false,
+                    'message' => $check['message'],
+                ], 422);
+            }
+
+            $discount = $dbCoupon->calculateDiscount($basePrice);
+            $finalAmount = max(0, round($basePrice - $discount, 2));
+
+            return response()->json([
+                'valid' => true,
+                'code' => $dbCoupon->code,
+                'discount_type' => $dbCoupon->type,
+                'discount_value' => $dbCoupon->value,
+                'discount_amount' => $discount,
+                'final_amount' => $finalAmount,
+                'formatted_discount' => '₹ ' . number_format($discount, 2),
+                'formatted_final' => '₹ ' . number_format($finalAmount, 2),
+                'label' => $dbCoupon->name ?: 'Academy Scholarship Concession',
+                'message' => 'Coupon code applied successfully! You saved ₹ ' . number_format($discount, 2),
+            ]);
+        }
+
+        // 2. Fallback to In-Memory Presets
         if (!isset($this->coupons[$code])) {
             return response()->json([
                 'valid' => false,
@@ -99,23 +132,44 @@ class OrderController extends Controller
     protected function calculateDiscount(?string $code, float $basePrice): array
     {
         $code = strtoupper(trim((string) $code));
-        if (empty($code) || !isset($this->coupons[$code])) {
+        if (empty($code)) {
             return ['code' => null, 'discount' => 0.0, 'final' => $basePrice, 'label' => null];
         }
 
-        $coupon = $this->coupons[$code];
-        $discount = round(($basePrice * $coupon['value']) / 100, 2);
-        if ($discount > $coupon['max']) {
-            $discount = (float) $coupon['max'];
-        }
-        $final = max(0, round($basePrice - $discount, 2));
+        // 1. Check Dynamic Database Coupon
+        $dbCoupon = Coupon::where('code', $code)->first();
+        if ($dbCoupon && $dbCoupon->is_active && !$dbCoupon->isExpired()) {
+            if ($dbCoupon->min_order_amount <= 0 || $basePrice >= $dbCoupon->min_order_amount) {
+                $discount = $dbCoupon->calculateDiscount($basePrice);
+                $final = max(0, round($basePrice - $discount, 2));
 
-        return [
-            'code' => $code,
-            'discount' => $discount,
-            'final' => $final,
-            'label' => $coupon['label'],
-        ];
+                return [
+                    'code' => $dbCoupon->code,
+                    'discount' => $discount,
+                    'final' => $final,
+                    'label' => $dbCoupon->name,
+                ];
+            }
+        }
+
+        // 2. Fallback to In-Memory Presets
+        if (isset($this->coupons[$code])) {
+            $coupon = $this->coupons[$code];
+            $discount = round(($basePrice * $coupon['value']) / 100, 2);
+            if ($discount > $coupon['max']) {
+                $discount = (float) $coupon['max'];
+            }
+            $final = max(0, round($basePrice - $discount, 2));
+
+            return [
+                'code' => $code,
+                'discount' => $discount,
+                'final' => $final,
+                'label' => $coupon['label'],
+            ];
+        }
+
+        return ['code' => null, 'discount' => 0.0, 'final' => $basePrice, 'label' => null];
     }
 
     public function checkout(Course $course, \App\Services\RazorpayService $razorpayService)
@@ -137,8 +191,15 @@ class OrderController extends Controller
             'mode' => $razorpayService->getMode(),
             'has_keys' => $razorpayService->hasValidCredentials(),
         ];
+        $paymentConfig = SiteSetting::getPaymentConfig();
+        $activeCoupons = Coupon::where('is_active', true)
+            ->where(function ($q) {
+                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            })
+            ->take(4)
+            ->get();
 
-        return view('student.checkout', compact('item', 'type', 'user', 'razorpayConfig'));
+        return view('student.checkout', compact('item', 'type', 'user', 'razorpayConfig', 'paymentConfig', 'activeCoupons'));
     }
 
     public function checkoutTest(MockTest $test, \App\Services\RazorpayService $razorpayService)
@@ -170,8 +231,15 @@ class OrderController extends Controller
             'mode' => $razorpayService->getMode(),
             'has_keys' => $razorpayService->hasValidCredentials(),
         ];
+        $paymentConfig = SiteSetting::getPaymentConfig();
+        $activeCoupons = Coupon::where('is_active', true)
+            ->where(function ($q) {
+                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            })
+            ->take(4)
+            ->get();
 
-        return view('student.checkout', compact('item', 'type', 'user', 'razorpayConfig'));
+        return view('student.checkout', compact('item', 'type', 'user', 'razorpayConfig', 'paymentConfig', 'activeCoupons'));
     }
 
     /**
@@ -252,7 +320,7 @@ class OrderController extends Controller
         }
 
         $validated = $request->validate([
-            'payment_method' => ['required', 'string', 'in:upi,netbanking,card,emi,mock,razorpay,paylater'],
+            'payment_method' => ['required', 'string', 'in:upi,netbanking,card,emi,mock,razorpay,paylater,bank,offline'],
             'coupon_code' => ['nullable', 'string', 'max:30'],
             'payment_reference' => ['nullable', 'string', 'max:100'],
             'method_meta' => ['nullable', 'string', 'max:255'],
@@ -331,6 +399,10 @@ class OrderController extends Controller
             'notes' => json_encode($notesArray),
         ]);
 
+        if (!empty($couponData['code'])) {
+            Coupon::where('code', $couponData['code'])->increment('used_count');
+        }
+
         Enrollment::firstOrCreate(
             ['user_id' => $user->id, 'course_id' => $course->id],
             [
@@ -350,7 +422,7 @@ class OrderController extends Controller
         $user = Auth::user();
 
         $validated = $request->validate([
-            'payment_method' => ['required', 'string', 'in:upi,netbanking,card,emi,mock,razorpay,paylater'],
+            'payment_method' => ['required', 'string', 'in:upi,netbanking,card,emi,mock,razorpay,paylater,bank,offline'],
             'coupon_code' => ['nullable', 'string', 'max:30'],
             'payment_reference' => ['nullable', 'string', 'max:100'],
             'method_meta' => ['nullable', 'string', 'max:255'],
@@ -427,6 +499,10 @@ class OrderController extends Controller
             'paid_at' => now(),
             'notes' => json_encode($notesArray),
         ]);
+
+        if (!empty($couponData['code'])) {
+            Coupon::where('code', $couponData['code'])->increment('used_count');
+        }
 
         return redirect()->route('student.orders.receipt', $order->id)
             ->with('success', 'Test series unlocked! You can now start your CBT examination.');

@@ -174,13 +174,25 @@
                     @endif
                 </a>
 
+                <a href="{{ route('admin.coupons.index') }}" 
+                   title="Scholarship Coupons & Promo Codes"
+                   class="flex items-center space-x-2.5 px-2.5 py-2 rounded-lg transition-colors group {{ request()->routeIs('admin.coupons.*') ? 'bg-white/10 text-white font-semibold shadow-2xs' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}">
+                    <svg class="w-6 h-6 shrink-0 {{ request()->routeIs('admin.coupons.*') ? 'text-white' : 'text-slate-400 group-hover:text-white' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                    </svg>
+                    <span x-show="!sidebarCollapsed" class="truncate">Coupons &amp; Discounts</span>
+                    @if(request()->routeIs('admin.coupons.*'))
+                        <span x-show="!sidebarCollapsed" class="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                    @endif
+                </a>
+
                 <a href="{{ route('admin.settings.payment') }}" 
-                   title="Razorpay Payment Gateway Settings"
+                   title="Payment Methods & Gateway Settings"
                    class="flex items-center space-x-2.5 px-2.5 py-2 rounded-lg transition-colors group {{ request()->routeIs('admin.settings.payment*') ? 'bg-white/10 text-white font-semibold shadow-2xs' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}">
                     <svg class="w-6 h-6 shrink-0 {{ request()->routeIs('admin.settings.payment*') ? 'text-white' : 'text-slate-400 group-hover:text-white' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
                     </svg>
-                    <span x-show="!sidebarCollapsed" class="truncate">Payment Gateway</span>
+                    <span x-show="!sidebarCollapsed" class="truncate">Payment Methods</span>
                     @if(request()->routeIs('admin.settings.payment*'))
                         <span x-show="!sidebarCollapsed" class="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400"></span>
                     @endif
