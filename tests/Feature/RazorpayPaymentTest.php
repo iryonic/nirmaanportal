@@ -249,4 +249,25 @@ class RazorpayPaymentTest extends TestCase
         $this->assertEquals('pay_webhook_payment_888', $order->payment_id);
         $this->assertTrue($this->student->isEnrolledIn($this->course));
     }
+
+    public function test_student_can_view_course_checkout_page_without_errors(): void
+    {
+        $response = $this->actingAs($this->student)->get(route('student.checkout', $this->course->id));
+
+        $response->assertStatus(200);
+        $response->assertSee('Complete Your Enrollment');
+        $response->assertSee('Online Payment');
+        $response->assertSee('Direct UPI');
+        $response->assertSee('Direct Bank Transfer');
+    }
+
+    public function test_student_can_view_mock_test_checkout_page_without_errors(): void
+    {
+        $response = $this->actingAs($this->student)->get(route('student.checkout.test', $this->mockTest->id));
+
+        $response->assertStatus(200);
+        $response->assertSee('Complete Your Enrollment');
+        $response->assertSee('CDS Combined Defence Mock #1');
+    }
 }
+

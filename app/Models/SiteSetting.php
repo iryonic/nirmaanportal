@@ -83,7 +83,20 @@ class SiteSetting extends Model
             ? Storage::disk('public')->url($qrPath)
             : null;
 
+        $razorpayMode = static::get('razorpay_mode', config('services.razorpay.mode', 'test'));
+        $razorpayKeyId = $razorpayMode === 'live' 
+            ? static::get('razorpay_live_key_id', '') 
+            : static::get('razorpay_key_id', config('services.razorpay.key_id', ''));
+
         return [
+            'razorpay' => [
+                'enabled' => filter_var(static::get('razorpay_enabled', config('services.razorpay.enabled', true)), FILTER_VALIDATE_BOOLEAN),
+                'mode' => $razorpayMode,
+                'key_id' => $razorpayKeyId,
+                'merchant_name' => static::get('razorpay_merchant_name', 'Nirmaan Academy'),
+                'theme_color' => static::get('razorpay_theme_color', '#172554'),
+                'fallback_simulation' => filter_var(static::get('razorpay_fallback_simulation', config('services.razorpay.fallback_simulation', true)), FILTER_VALIDATE_BOOLEAN),
+            ],
             'upi' => [
                 'enabled' => filter_var(static::get('upi_enabled', '1'), FILTER_VALIDATE_BOOLEAN),
                 'vpa' => static::get('upi_vpa', 'nirmaanacademy@icici'),
@@ -114,6 +127,12 @@ class SiteSetting extends Model
                 'campus_address' => static::get('offline_campus_address', 'Nirmaan Defence Academy, Officer Training Campus, Plot 42, Civil Lines'),
                 'contact_phone' => static::get('offline_contact_phone', '+91 98765 43210'),
                 'instructions' => static::get('offline_instructions', 'Visit our academy admissions desk during working hours (9 AM - 6 PM) to finalize registration in cash or DD.'),
+            ],
+            'methods' => [
+                'card' => filter_var(static::get('method_card_enabled', '1'), FILTER_VALIDATE_BOOLEAN),
+                'netbanking' => filter_var(static::get('method_netbanking_enabled', '1'), FILTER_VALIDATE_BOOLEAN),
+                'emi' => filter_var(static::get('method_emi_enabled', '1'), FILTER_VALIDATE_BOOLEAN),
+                'offline' => filter_var(static::get('method_offline_enabled', '1'), FILTER_VALIDATE_BOOLEAN),
             ],
         ];
     }

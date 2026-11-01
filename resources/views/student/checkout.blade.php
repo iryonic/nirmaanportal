@@ -11,7 +11,9 @@
     $originalPrice = (float) ($item->original_price ?? ($price * 1.4));
     $baseDiscount = max(0, $originalPrice - $price);
     
-    $paymentConfig = $paymentConfig ?? \App\Models\SiteSetting::getPaymentConfig();
+    $defaultConfig = \App\Models\SiteSetting::getPaymentConfig();
+    $paymentConfig = array_replace_recursive($defaultConfig, $paymentConfig ?? []);
+
     $razorpayJson = json_encode($razorpayConfig ?? [
         'enabled' => $paymentConfig['razorpay']['enabled'] ?? true,
         'key_id' => $paymentConfig['razorpay']['key_id'] ?? '',
@@ -331,7 +333,7 @@ function checkoutEngine() {
                         <div class="p-4 space-y-3">
 
                             <!-- Option 1: Razorpay All-in-One (Recommended & Clean) -->
-                            @if($paymentConfig['razorpay']['enabled'])
+                            @if(!empty($paymentConfig['razorpay']['enabled']))
                                 <label class="block p-3.5 rounded-xl border-2 cursor-pointer transition-all"
                                        :class="method === 'razorpay' ? 'border-blue-950 bg-blue-50/30 shadow-2xs' : 'border-slate-200 hover:border-slate-300 bg-white'">
                                     <div class="flex items-center justify-between">
@@ -359,7 +361,7 @@ function checkoutEngine() {
                             @endif
 
                             <!-- Option 2: Direct UPI QR Code -->
-                            @if($paymentConfig['upi']['enabled'])
+                            @if(!empty($paymentConfig['upi']['enabled']))
                                 <label class="block p-3.5 rounded-xl border-2 cursor-pointer transition-all"
                                        :class="method === 'upi' ? 'border-blue-950 bg-blue-50/30 shadow-2xs' : 'border-slate-200 hover:border-slate-300 bg-white'">
                                     <div class="flex items-center space-x-3">
@@ -387,7 +389,7 @@ function checkoutEngine() {
                                                         class="px-3 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-950 text-xs font-bold border border-blue-200 transition-colors inline-flex items-center space-x-1">
                                                     <span x-text="copiedVpa ? '✓ Copied!' : 'Copy UPI ID'">Copy UPI ID</span>
                                                 </button>
-                                                <p class="text-[11px] text-slate-500">{{ $paymentConfig['upi']['instructions'] }}</p>
+                                                <p class="text-[11px] text-slate-500">{{ $paymentConfig['upi']['instructions'] ?? '' }}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -395,70 +397,70 @@ function checkoutEngine() {
                             @endif
 
                             <!-- Option 3: Direct Bank Wire (IMPS / NEFT) -->
-                            @if($paymentConfig['bank']['enabled'])
+                            @if(!empty($paymentConfig['bank']['enabled']))
                                 <label class="block p-3.5 rounded-xl border-2 cursor-pointer transition-all"
                                        :class="method === 'bank' ? 'border-blue-950 bg-blue-50/30 shadow-2xs' : 'border-slate-200 hover:border-slate-300 bg-white'">
-                                    <div class="flex items-center space-x-3">
-                                        <input type="radio" name="payment_choice" value="bank" x-model="method" class="w-4 h-4 text-blue-950 focus:ring-blue-950">
-                                        <div>
-                                            <span class="text-sm font-bold text-slate-900">Direct Bank Transfer (IMPS / NEFT)</span>
-                                            <p class="text-xs text-slate-500 mt-0.5">Wire directly to {{ $paymentConfig['bank']['name'] }}</p>
-                                        </div>
-                                    </div>
+                                     <div class="flex items-center space-x-3">
+                                         <input type="radio" name="payment_choice" value="bank" x-model="method" class="w-4 h-4 text-blue-950 focus:ring-blue-950">
+                                         <div>
+                                             <span class="text-sm font-bold text-slate-900">Direct Bank Transfer (IMPS / NEFT)</span>
+                                             <p class="text-xs text-slate-500 mt-0.5">Wire directly to {{ $paymentConfig['bank']['bank_name'] ?? $paymentConfig['bank']['name'] ?? 'State Bank of India' }}</p>
+                                         </div>
+                                     </div>
 
-                                    <!-- Expandable Bank Account Details -->
-                                    <div x-show="method === 'bank'" x-transition class="mt-3 pt-3 border-t border-slate-200/80 space-y-2.5">
-                                        <div class="bg-white p-3 rounded-lg border border-slate-200 text-xs space-y-1.5 font-mono">
-                                            <div class="flex justify-between">
-                                                <span class="text-slate-500">Bank:</span>
-                                                <span class="font-bold text-slate-900">{{ $paymentConfig['bank']['name'] }}</span>
-                                            </div>
-                                            <div class="flex justify-between">
-                                                <span class="text-slate-500">Account Name:</span>
-                                                <span class="font-bold text-slate-900">{{ $paymentConfig['bank']['account_name'] }}</span>
-                                            </div>
-                                            <div class="flex justify-between items-center">
-                                                <span class="text-slate-500">Account No:</span>
-                                                <div class="flex items-center space-x-1">
-                                                    <span class="font-bold text-slate-900">{{ $paymentConfig['bank']['account_number'] }}</span>
-                                                    <button type="button" @click="copyBankField('{{ addslashes($paymentConfig['bank']['account_number'] ?? '') }}', 'acc')" class="text-blue-700 text-[10px] font-bold underline">
-                                                        <span x-text="copiedBankField === 'acc' ? 'Copied' : 'Copy'">Copy</span>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <div class="flex justify-between items-center">
-                                                <span class="text-slate-500">IFSC Code:</span>
-                                                <div class="flex items-center space-x-1">
-                                                    <span class="font-bold text-slate-900">{{ $paymentConfig['bank']['ifsc_code'] }}</span>
-                                                    <button type="button" @click="copyBankField('{{ addslashes($paymentConfig['bank']['ifsc_code'] ?? '') }}', 'ifsc')" class="text-blue-700 text-[10px] font-bold underline">
-                                                        <span x-text="copiedBankField === 'ifsc' ? 'Copied' : 'Copy'">Copy</span>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
+                                     <!-- Expandable Bank Account Details -->
+                                     <div x-show="method === 'bank'" x-transition class="mt-3 pt-3 border-t border-slate-200/80 space-y-2.5">
+                                         <div class="bg-white p-3 rounded-lg border border-slate-200 text-xs space-y-1.5 font-mono">
+                                             <div class="flex justify-between">
+                                                 <span class="text-slate-500">Bank:</span>
+                                                 <span class="font-bold text-slate-900">{{ $paymentConfig['bank']['bank_name'] ?? $paymentConfig['bank']['name'] ?? 'State Bank of India' }}</span>
+                                             </div>
+                                             <div class="flex justify-between">
+                                                 <span class="text-slate-500">Account Name:</span>
+                                                 <span class="font-bold text-slate-900">{{ $paymentConfig['bank']['account_name'] ?? '' }}</span>
+                                             </div>
+                                             <div class="flex justify-between items-center">
+                                                 <span class="text-slate-500">Account No:</span>
+                                                 <div class="flex items-center space-x-1">
+                                                     <span class="font-bold text-slate-900">{{ $paymentConfig['bank']['account_number'] ?? '' }}</span>
+                                                     <button type="button" @click="copyBankField('{{ addslashes($paymentConfig['bank']['account_number'] ?? '') }}', 'acc')" class="text-blue-700 text-[10px] font-bold underline">
+                                                         <span x-text="copiedBankField === 'acc' ? 'Copied' : 'Copy'">Copy</span>
+                                                     </button>
+                                                 </div>
+                                             </div>
+                                             <div class="flex justify-between items-center">
+                                                 <span class="text-slate-500">IFSC Code:</span>
+                                                 <div class="flex items-center space-x-1">
+                                                     <span class="font-bold text-slate-900">{{ $paymentConfig['bank']['ifsc_code'] ?? '' }}</span>
+                                                     <button type="button" @click="copyBankField('{{ addslashes($paymentConfig['bank']['ifsc_code'] ?? '') }}', 'ifsc')" class="text-blue-700 text-[10px] font-bold underline">
+                                                         <span x-text="copiedBankField === 'ifsc' ? 'Copied' : 'Copy'">Copy</span>
+                                                     </button>
+                                                 </div>
+                                             </div>
+                                         </div>
 
-                                        <input type="text" x-model="bankUtr" placeholder="Enter Transfer UTR / Ref Number (Optional)"
-                                               class="w-full text-xs font-mono px-3 py-2 border border-slate-300 rounded-lg outline-none focus:ring-1 focus:ring-blue-950">
-                                    </div>
-                                </label>
-                            @endif
+                                         <input type="text" x-model="bankUtr" placeholder="Enter Transfer UTR / Ref Number (Optional)"
+                                                class="w-full text-xs font-mono px-3 py-2 border border-slate-300 rounded-lg outline-none focus:ring-1 focus:ring-blue-950">
+                                     </div>
+                                 </label>
+                             @endif
 
-                            <!-- Option 4: Campus Admissions Desk (If Enabled) -->
-                            @if($paymentConfig['methods']['offline'])
-                                <label class="block p-3.5 rounded-xl border-2 cursor-pointer transition-all"
-                                       :class="method === 'offline' ? 'border-blue-950 bg-blue-50/30 shadow-2xs' : 'border-slate-200 hover:border-slate-300 bg-white'">
-                                    <div class="flex items-center space-x-3">
-                                        <input type="radio" name="payment_choice" value="offline" x-model="method" class="w-4 h-4 text-blue-950 focus:ring-blue-950">
-                                        <div>
-                                            <span class="text-sm font-bold text-slate-900">Academy Campus Desk</span>
-                                            <p class="text-xs text-slate-500 mt-0.5">Pay in cash or DD at admissions desk: {{ $paymentConfig['offline']['contact_phone'] }}</p>
-                                        </div>
-                                    </div>
-                                </label>
-                            @endif
+                             <!-- Option 4: Campus Admissions Desk (If Enabled) -->
+                             @if(!empty($paymentConfig['offline']['enabled']) || !empty($paymentConfig['methods']['offline']))
+                                 <label class="block p-3.5 rounded-xl border-2 cursor-pointer transition-all"
+                                        :class="method === 'offline' ? 'border-blue-950 bg-blue-50/30 shadow-2xs' : 'border-slate-200 hover:border-slate-300 bg-white'">
+                                     <div class="flex items-center space-x-3">
+                                         <input type="radio" name="payment_choice" value="offline" x-model="method" class="w-4 h-4 text-blue-950 focus:ring-blue-950">
+                                         <div>
+                                             <span class="text-sm font-bold text-slate-900">Academy Campus Desk</span>
+                                             <p class="text-xs text-slate-500 mt-0.5">Pay in cash or DD at admissions desk: {{ $paymentConfig['offline']['contact_phone'] ?? '' }}</p>
+                                         </div>
+                                     </div>
+                                 </label>
+                             @endif
 
-                            <!-- Option 5: Sandbox Test (If in Test Mode) -->
-                            @if($razorpayConfig['mode'] === 'test' || ($paymentConfig['razorpay']['fallback_simulation'] ?? true))
+                             <!-- Option 5: Sandbox Test (If in Test Mode) -->
+                             @if(($razorpayConfig['mode'] ?? 'test') === 'test' || !empty($paymentConfig['razorpay']['fallback_simulation']))
                                 <label class="block p-3 rounded-xl border cursor-pointer transition-all"
                                        :class="method === 'mock' ? 'border-emerald-600 bg-emerald-50/40' : 'border-slate-200 hover:border-slate-300 bg-white'">
                                     <div class="flex items-center space-x-3">
