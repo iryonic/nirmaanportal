@@ -21,17 +21,42 @@
                    
                 </div>
 
-                <!-- Session Stopwatch & Quick Reset -->
-                <div class="flex items-center space-x-3 self-start sm:self-auto">
-                    <div class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-100 text-slate-800 text-xs font-mono font-bold border border-slate-200">
+                <!-- Session Stopwatch & Quick Controls -->
+                <div class="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+                    <!-- Timer Display Box -->
+                    <div class="flex items-center space-x-2 px-3 py-1.5 rounded-xl border transition-all font-mono font-bold text-xs"
+                         :class="timerRunning ? 'bg-emerald-50 border-emerald-300 text-emerald-950 shadow-xs' : 'bg-slate-100 border-slate-200 text-slate-700'">
+                        <span class="w-2 h-2 rounded-full" 
+                              :class="timerRunning ? 'bg-emerald-500 animate-pulse' : (secondsElapsed > 0 ? 'bg-amber-400' : 'bg-slate-400')"></span>
                         <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        <span x-text="formattedTime">00:00</span>
+                        <span x-text="formattedTime" class="text-sm font-black">00:00</span>
                     </div>
 
-                    <button type="button" @click="resetSessionStats()" 
-                            title="Reset practice session metrics"
-                            class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-2xs">
-                        Reset 
+                    <!-- Start / Pause / Resume Button -->
+                    <button type="button" 
+                            @click="toggleTimer()" 
+                            class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                            :class="timerRunning ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white'">
+                        <template x-if="!timerRunning">
+                            <span class="flex items-center space-x-1.5">
+                                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                <span x-text="secondsElapsed > 0 ? 'Resume Timer' : 'Start Stopwatch'"></span>
+                            </span>
+                        </template>
+                        <template x-if="timerRunning">
+                            <span class="flex items-center space-x-1.5">
+                                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                                <span>Pause</span>
+                            </span>
+                        </template>
+                    </button>
+
+                    <!-- Reset Button -->
+                    <button type="button" 
+                            @click="resetSessionStats()" 
+                            title="Reset practice session metrics & timer"
+                            class="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-2xs">
+                        Reset
                     </button>
                 </div>
             </div>
@@ -505,6 +530,7 @@ function practiceHUD() {
         bookmarks: [],
         onlyBookmarks: false,
         secondsElapsed: 0,
+        timerRunning: false,
         timerInterval: null,
 
         get accuracyRate() {
@@ -527,13 +553,13 @@ function practiceHUD() {
                 this.bookmarks = [];
             }
 
-            // Start session stopwatch
-            this.timerInterval = setInterval(() => {
-                this.secondsElapsed++;
-            }, 1000);
+            // Note: Stopwatch is initially stationary at 00:00 until student clicks "Start Stopwatch"
 
-            // Listen for evaluated drills
+            // Listen for evaluated drills (auto-starts timer if user evaluates without clicking start)
             window.addEventListener('drill-evaluated', (e) => {
+                if (!this.timerRunning && this.secondsElapsed === 0) {
+                    this.startTimer();
+                }
                 this.attemptedCount++;
                 if (e.detail.isCorrect) {
                     this.correctCount++;
@@ -542,6 +568,31 @@ function practiceHUD() {
                     this.streakCount = 0;
                 }
             });
+        },
+
+        startTimer() {
+            if (this.timerRunning) return;
+            this.timerRunning = true;
+            this.timerInterval = setInterval(() => {
+                this.secondsElapsed++;
+            }, 1000);
+        },
+
+        pauseTimer() {
+            if (!this.timerRunning) return;
+            this.timerRunning = false;
+            if (this.timerInterval) {
+                clearInterval(this.timerInterval);
+                this.timerInterval = null;
+            }
+        },
+
+        toggleTimer() {
+            if (this.timerRunning) {
+                this.pauseTimer();
+            } else {
+                this.startTimer();
+            }
         },
 
         isBookmarked(qId) {
@@ -560,6 +611,7 @@ function practiceHUD() {
         },
 
         resetSessionStats() {
+            this.pauseTimer();
             this.attemptedCount = 0;
             this.correctCount = 0;
             this.streakCount = 0;
