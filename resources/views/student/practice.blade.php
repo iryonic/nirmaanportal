@@ -545,7 +545,7 @@ function practiceHUD() {
         },
 
         initHUD() {
-            // Load saved bookmarks from localStorage
+            // 1. Load saved bookmarks from localStorage
             try {
                 let saved = localStorage.getItem('nirmaan_practice_bookmarks');
                 this.bookmarks = saved ? JSON.parse(saved) : [];
@@ -553,9 +553,38 @@ function practiceHUD() {
                 this.bookmarks = [];
             }
 
-            // Note: Stopwatch is initially stationary at 00:00 until student clicks "Start Stopwatch"
+            // 2. Restore stopwatch session state across reloads & filter navigation
+            try {
+                let rawSession = localStorage.getItem('nirmaan_practice_session');
+                if (rawSession) {
+                    let sessionData = JSON.parse(rawSession);
+                    this.attemptedCount = sessionData.attemptedCount || 0;
+                    this.correctCount = sessionData.correctCount || 0;
+                    this.streakCount = sessionData.streakCount || 0;
+                    this.secondsElapsed = sessionData.secondsElapsed || 0;
 
-            // Listen for evaluated drills (auto-starts timer if user evaluates without clicking start)
+                    if (sessionData.timerRunning && sessionData.lastSavedTimestamp) {
+                        // Calculate seconds elapsed while page was reloading / navigating
+                        let deltaSeconds = Math.floor((Date.now() - sessionData.lastSavedTimestamp) / 1000);
+                        // Resume timing if within 12 hours
+                        if (deltaSeconds >= 0 && deltaSeconds < 43200) {
+                            this.secondsElapsed += deltaSeconds;
+                            this.startTimer();
+                        } else {
+                            this.timerRunning = false;
+                        }
+                    } else {
+                        this.timerRunning = false;
+                    }
+                }
+            } catch (e) {}
+
+            // 3. Save state on page reload / unload
+            window.addEventListener('beforeunload', () => {
+                this.saveSession();
+            });
+
+            // 4. Listen for evaluated drills (auto-starts timer if user evaluates without clicking start)
             window.addEventListener('drill-evaluated', (e) => {
                 if (!this.timerRunning && this.secondsElapsed === 0) {
                     this.startTimer();
@@ -567,15 +596,37 @@ function practiceHUD() {
                 } else {
                     this.streakCount = 0;
                 }
+                this.saveSession();
             });
         },
 
+        saveSession() {
+            try {
+                localStorage.setItem('nirmaan_practice_session', JSON.stringify({
+                    secondsElapsed: this.secondsElapsed,
+                    timerRunning: this.timerRunning,
+                    lastSavedTimestamp: Date.now(),
+                    attemptedCount: this.attemptedCount,
+                    correctCount: this.correctCount,
+                    streakCount: this.streakCount
+                }));
+            } catch (e) {}
+        },
+
         startTimer() {
-            if (this.timerRunning) return;
+            if (this.timerRunning && this.timerInterval) return;
             this.timerRunning = true;
-            this.timerInterval = setInterval(() => {
-                this.secondsElapsed++;
-            }, 1000);
+            this.saveSession();
+
+            if (!this.timerInterval) {
+                this.timerInterval = setInterval(() => {
+                    this.secondsElapsed++;
+                    // Periodically sync every 3 seconds to avoid heavy storage writes
+                    if (this.secondsElapsed % 3 === 0) {
+                        this.saveSession();
+                    }
+                }, 1000);
+            }
         },
 
         pauseTimer() {
@@ -585,6 +636,7 @@ function practiceHUD() {
                 clearInterval(this.timerInterval);
                 this.timerInterval = null;
             }
+            this.saveSession();
         },
 
         toggleTimer() {
@@ -616,6 +668,9 @@ function practiceHUD() {
             this.correctCount = 0;
             this.streakCount = 0;
             this.secondsElapsed = 0;
+            try {
+                localStorage.removeItem('nirmaan_practice_session');
+            } catch (e) {}
         }
     };
 }
