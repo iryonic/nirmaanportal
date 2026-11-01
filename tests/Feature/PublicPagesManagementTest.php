@@ -148,4 +148,39 @@ class PublicPagesManagementTest extends TestCase
         $this->assertEquals('10', SiteSetting::get('terms_refund_period_days'));
         $this->assertEquals('Lt. Gen. K. P. Singh (Retd.)', SiteSetting::get('grievance_officer_name'));
     }
+
+    public function test_admin_content_cms_page_renders_with_responsive_controls_and_inquiries(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'is_active' => true,
+        ]);
+
+        $inquiry = ContactInquiry::create([
+            'name' => 'Cadet Arjun',
+            'email' => 'arjun@cadet.in',
+            'phone' => '+91 99999 11111',
+            'subject' => 'SSB Medical Board Query',
+            'message' => 'Need clarification regarding color vision criteria for NDA Flying branch.',
+            'type' => 'inquiry',
+            'status' => 'new',
+            'ticket_number' => 'INQ-261101-9999',
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.content.index', ['tab' => 'inquiries']));
+
+        $response->assertStatus(200);
+        $response->assertSee('Portal Content &amp; CMS', false);
+        $response->assertSee('Select CMS Section'); // Mobile select label
+        $response->assertSee('INQ-261101-9999');
+        $response->assertSee('Cadet Arjun');
+        $response->assertSee('SSB Medical Board Query');
+
+        // Test toggling status
+        $toggleResponse = $this->actingAs($admin)->post(route('admin.content.inquiries.toggle', $inquiry->id));
+        $toggleResponse->assertRedirect();
+        $this->assertEquals('replied', $inquiry->fresh()->status);
+    }
 }
+
+
