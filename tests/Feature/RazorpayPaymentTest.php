@@ -273,8 +273,7 @@ class RazorpayPaymentTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Complete Your Enrollment');
         $response->assertSee('Online Payment');
-        $response->assertSee('Direct UPI');
-        $response->assertSee('Direct Bank Transfer');
+        $response->assertSee('Razorpay');
     }
 
     public function test_student_can_view_mock_test_checkout_page_without_errors(): void

@@ -23,18 +23,7 @@
         'has_keys' => !empty($paymentConfig['razorpay']['key_id']),
     ]);
     $paymentConfigJson = json_encode($paymentConfig);
-
-    // Initial selected method: default to razorpay if enabled, else upi, else bank, else mock
     $defaultMethod = 'razorpay';
-    if (!($paymentConfig['razorpay']['enabled'] ?? true)) {
-        if ($paymentConfig['upi']['enabled'] ?? true) {
-            $defaultMethod = 'upi';
-        } elseif ($paymentConfig['bank']['enabled'] ?? true) {
-            $defaultMethod = 'bank';
-        } else {
-            $defaultMethod = 'mock';
-        }
-    }
 @endphp
 
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
@@ -44,7 +33,7 @@ function checkoutEngine() {
     return {
         razorpayConfig: {!! $razorpayJson !!},
         paymentConfig: {!! $paymentConfigJson !!},
-        method: '{{ $defaultMethod }}',
+        method: 'razorpay',
         basePrice: {{ $price }},
         originalPrice: {{ $originalPrice }},
         baseDiscount: {{ $baseDiscount }},
@@ -61,15 +50,9 @@ function checkoutEngine() {
         couponSuccess: '',
         appliedCoupon: null,
         
-        // UPI & Bank state
-        vpaInput: '{{ $user->email ? explode('@', $user->email)[0] . '@okhdfcbank' : 'cadet@upi' }}',
-        copiedVpa: false,
-        bankUtr: '',
-        copiedBankField: null,
-        
         // Processing modal state
         isProcessing: false,
-        processingMessage: 'Processing secure payment...',
+        processingMessage: 'Connecting to Razorpay secure checkout...',
         
         // Computed
         get finalPayable() {
@@ -85,33 +68,6 @@ function checkoutEngine() {
                 savings += this.appliedCoupon.discount_amount;
             }
             return savings;
-        },
-
-        get upiQrUrl() {
-            if (this.paymentConfig?.upi?.qr_image_url) {
-                return this.paymentConfig.upi.qr_image_url;
-            }
-            let vpa = this.paymentConfig?.upi?.vpa || 'nirmaanacademy@icici';
-            let name = encodeURIComponent(this.paymentConfig?.upi?.merchant_name || 'Nirmaan Defence Academy');
-            let amt = this.finalPayable.toFixed(2);
-            return 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent('upi://pay?pa=' + vpa + '&pn=' + name + '&am=' + amt + '&cu=INR&tn=NIRMAAN-CADET');
-        },
-
-        copyVpa() {
-            let vpa = this.paymentConfig?.upi?.vpa || 'nirmaanacademy@icici';
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(vpa);
-            }
-            this.copiedVpa = true;
-            setTimeout(() => { this.copiedVpa = false; }, 2500);
-        },
-
-        copyBankField(value, fieldKey) {
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(value);
-            }
-            this.copiedBankField = fieldKey;
-            setTimeout(() => { this.copiedBankField = null; }, 2500);
         },
         
         applyCoupon(directCode = null) {
@@ -173,114 +129,100 @@ function checkoutEngine() {
         },
         
         submitPayment() {
-            if (this.method === 'razorpay') {
-                this.isProcessing = true;
-                this.processingMessage = 'Opening secure payment gateway...';
+            this.isProcessing = true;
+            this.processingMessage = 'Opening secure Razorpay gateway...';
 
-                fetch('{{ route('student.checkout.create-razorpay-order', [], false) }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify({
-                        type: '{{ $type }}',
-                        item_type: '{{ $type }}',
-                        item_id: {{ $item->id }},
-                        amount: this.finalPayable,
-                        coupon_code: this.appliedCoupon ? this.appliedCoupon.code : null
-                    })
+            fetch('{{ route('student.checkout.create-razorpay-order', [], false) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    type: '{{ $type }}',
+                    item_type: '{{ $type }}',
+                    item_id: {{ $item->id }},
+                    amount: this.finalPayable,
+                    coupon_code: this.appliedCoupon ? this.appliedCoupon.code : null
                 })
-                .then(async res => {
-                    const isJson = (res.headers.get('content-type') || '').includes('application/json');
-                    const data = isJson ? await res.json() : null;
-                    if (!res.ok) {
-                        const errMsg = (data && (data.message || data.error)) || ('Server returned HTTP ' + res.status);
-                        throw new Error(errMsg);
-                    }
-                    return data;
-                })
-                .then(data => {
-                    if (!data || !data.success) {
-                        this.isProcessing = false;
-                        alert('Could not initialize gateway: ' + (data?.message || 'Unknown error'));
-                        return;
-                    }
+            })
+            .then(async res => {
+                const isJson = (res.headers.get('content-type') || '').includes('application/json');
+                const data = isJson ? await res.json() : null;
+                if (!res.ok) {
+                    const errMsg = (data && (data.message || data.error)) || ('Server returned HTTP ' + res.status);
+                    throw new Error(errMsg);
+                }
+                return data;
+            })
+            .then(data => {
+                if (!data || !data.success) {
+                    this.isProcessing = false;
+                    alert('Could not initialize gateway: ' + (data?.message || 'Unknown error'));
+                    return;
+                }
 
-                    this.razorpayOrderId = data.order_id;
+                this.razorpayOrderId = data.order_id;
 
-                    if (this.razorpayConfig.has_keys && !data.simulation && !data.is_simulated) {
-                        this.isProcessing = false;
+                if (this.razorpayConfig.has_keys && !data.simulation && !data.is_simulated) {
+                    this.isProcessing = false;
 
-                        const rzp = new Razorpay({
-                            key: this.razorpayConfig.key_id,
-                            amount: data.amount,
-                            currency: data.currency || 'INR',
-                            name: this.razorpayConfig.merchant_name || 'Nirmaan Defence Academy',
-                            description: '{{ addslashes($item->title) }}',
-                            order_id: data.order_id,
-                            prefill: {
-                                name: '{{ addslashes($user->name) }}',
-                                email: '{{ $user->email }}',
-                                contact: '{{ $user->phone ?? "" }}'
-                            },
-                            theme: {
-                                color: this.razorpayConfig.theme_color || '#172554'
-                            },
-                            handler: (response) => {
-                                this.isProcessing = true;
-                                this.processingMessage = 'Payment successful! Unlocking your access...';
-                                
-                                this.razorpayPaymentId = response.razorpay_payment_id;
-                                this.razorpaySignature = response.razorpay_signature;
+                    const rzp = new Razorpay({
+                        key: this.razorpayConfig.key_id,
+                        amount: data.amount,
+                        currency: data.currency || 'INR',
+                        name: this.razorpayConfig.merchant_name || 'Nirmaan Defence Academy',
+                        description: '{{ addslashes($item->title) }}',
+                        order_id: data.order_id,
+                        prefill: {
+                            name: '{{ addslashes($user->name) }}',
+                            email: '{{ $user->email }}',
+                            contact: '{{ $user->phone ?? "" }}'
+                        },
+                        theme: {
+                            color: this.razorpayConfig.theme_color || '#172554'
+                        },
+                        handler: (response) => {
+                            this.isProcessing = true;
+                            this.processingMessage = 'Payment successful! Unlocking your access...';
+                            
+                            this.razorpayPaymentId = response.razorpay_payment_id;
+                            this.razorpaySignature = response.razorpay_signature;
 
-                                setTimeout(() => {
-                                    document.getElementById('checkout-form').submit();
-                                }, 500);
-                            },
-                            modal: {
-                                ondismiss: () => {
-                                    this.isProcessing = false;
-                                }
-                            }
-                        });
-
-                        rzp.on('payment.failed', (resp) => {
-                            this.isProcessing = false;
-                            alert('Payment could not be completed: ' + (resp.error?.description || 'Gateway error'));
-                        });
-
-                        rzp.open();
-                    } else {
-                        // Sandbox Fallback
-                        this.processingMessage = 'Confirming enrollment in sandbox mode...';
-                        setTimeout(() => {
-                            this.razorpayPaymentId = 'pay_sim_' + Math.random().toString(36).substring(2, 14);
-                            this.razorpaySignature = 'sig_sim_' + Math.random().toString(36).substring(2, 20);
                             setTimeout(() => {
                                 document.getElementById('checkout-form').submit();
-                            }, 400);
-                        }, 800);
-                    }
-                })
-                .catch(err => {
-                    this.isProcessing = false;
-                    alert('Checkout Error: ' + err.message);
-                });
+                            }, 500);
+                        },
+                        modal: {
+                            ondismiss: () => {
+                                this.isProcessing = false;
+                            }
+                        }
+                    });
 
-                return;
-            }
+                    rzp.on('payment.failed', (resp) => {
+                        this.isProcessing = false;
+                        alert('Payment could not be completed: ' + (resp.error?.description || 'Gateway error'));
+                    });
 
-            // Direct UPI, Bank Wire, or Mock
-            this.isProcessing = true;
-            this.processingMessage = this.method === 'bank' 
-                ? 'Recording bank transfer & activating access...' 
-                : (this.method === 'offline' ? 'Reserving admissions desk seat...' : 'Verifying and unlocking access...');
-            
-            setTimeout(() => {
-                document.getElementById('checkout-form').submit();
-            }, 1000);
+                    rzp.open();
+                } else {
+                    // Sandbox / Test Fallback
+                    this.processingMessage = 'Confirming enrollment in sandbox test mode...';
+                    setTimeout(() => {
+                        this.razorpayPaymentId = 'pay_sim_' + Math.random().toString(36).substring(2, 14);
+                        this.razorpaySignature = 'sig_sim_' + Math.random().toString(36).substring(2, 20);
+                        setTimeout(() => {
+                            document.getElementById('checkout-form').submit();
+                        }, 400);
+                    }, 800);
+                }
+            })
+            .catch(err => {
+                this.isProcessing = false;
+                alert('Checkout Error: ' + err.message);
+            });
         }
     };
 }
@@ -311,18 +253,18 @@ function checkoutEngine() {
         <form action="{{ $formAction }}" method="POST" id="checkout-form" @submit.prevent="submitPayment()">
             @csrf
 
-            <!-- Hidden Fields for Controller Verification -->
-            <input type="hidden" name="payment_method" :value="method">
+            <!-- Hidden Fields for Verification: Always Razorpay -->
+            <input type="hidden" name="payment_method" value="razorpay">
             <input type="hidden" name="coupon_code" :value="appliedCoupon ? appliedCoupon.code : ''">
-            <input type="hidden" name="payment_reference" :value="razorpayPaymentId || bankUtr || ('pay_' + Math.random().toString(36).substring(2, 10))">
+            <input type="hidden" name="payment_reference" :value="razorpayPaymentId || ('pay_rzp_' + Math.random().toString(36).substring(2, 10))">
             <input type="hidden" name="razorpay_payment_id" :value="razorpayPaymentId">
             <input type="hidden" name="razorpay_order_id" :value="razorpayOrderId">
             <input type="hidden" name="razorpay_signature" :value="razorpaySignature">
-            <input type="hidden" name="method_meta" :value="method === 'razorpay' ? 'Razorpay Secure Gateway' : (method === 'upi' ? (vpaInput || paymentConfig.upi.vpa) : (method === 'bank' ? ('Bank UTR: ' + (bankUtr || 'DIRECT_WIRE')) : (method === 'offline' ? 'Academy Admissions Desk' : 'Instant Simulation')))">
+            <input type="hidden" name="method_meta" value="Razorpay Verified Gateway">
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                 
-                <!-- Left Column: Simple & Fast Payment Choice (7 Cols) -->
+                <!-- Left Column: Razorpay Official Only (7 Cols) -->
                 <div class="lg:col-span-7 space-y-4">
                     
                     <!-- Cadet Identity Pill -->
@@ -341,153 +283,83 @@ function checkoutEngine() {
                         </span>
                     </div>
 
-                    <!-- Payment Options Box -->
-                    <div class="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
-                        <div class="p-4 border-b border-slate-100 bg-slate-50/70">
-                            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-700">Select Payment Option</h2>
+                    <!-- Razorpay Official Gateway Box (Only Allowed Method) -->
+                    <div class="bg-white rounded-xl border-2 border-blue-950/20 shadow-2xs overflow-hidden">
+                        
+                        <div class="p-4 border-b border-slate-100 bg-blue-950/[0.03] flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-800">Official Payment Gateway</h2>
+                            </div>
+                            <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-blue-950 text-white">
+                                Razorpay Verified
+                            </span>
                         </div>
 
-                        <div class="p-4 space-y-3">
+                        <div class="p-4 sm:p-5 space-y-4">
 
-                            <!-- Option 1: Razorpay All-in-One (Recommended & Clean) -->
-                            @if(!empty($paymentConfig['razorpay']['enabled']))
-                                <label class="block p-3.5 rounded-xl border-2 cursor-pointer transition-all"
-                                       :class="method === 'razorpay' ? 'border-blue-950 bg-blue-50/30 shadow-2xs' : 'border-slate-200 hover:border-slate-300 bg-white'">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center space-x-3">
-                                            <input type="radio" name="payment_choice" value="razorpay" x-model="method" class="w-4 h-4 text-blue-950 focus:ring-blue-950">
-                                            <div>
-                                                <div class="flex items-center space-x-2">
-                                                    <span class="text-sm font-bold text-slate-900">Online Payment</span>
-                                                    <span class="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">Fastest</span>
-                                                </div>
-                                                <p class="text-xs text-slate-500 mt-0.5">UPI (GPay, PhonePe, Paytm), Debit/Credit Cards, Net Banking, EMI</p>
-                                            </div>
+                            <!-- Razorpay Visual Badge Card -->
+                            <div class="p-4 rounded-xl border border-blue-950/15 bg-gradient-to-br from-blue-50/50 to-white space-y-3">
+                                
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-2.5">
+                                        <div class="w-9 h-9 rounded-lg bg-blue-950 text-white flex items-center justify-center shadow-xs">
+                                            <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
                                         </div>
-                                    </div>
-
-                                    <!-- Quick Instrument Badges -->
-                                    <div class="mt-2.5 pt-2.5 border-t border-slate-100 flex flex-wrap gap-1.5 text-[10px] font-semibold text-slate-600">
-                                        <span class="px-2 py-0.5 bg-slate-100 rounded">GPay</span>
-                                        <span class="px-2 py-0.5 bg-slate-100 rounded">PhonePe</span>
-                                        <span class="px-2 py-0.5 bg-slate-100 rounded">Paytm</span>
-                                        <span class="px-2 py-0.5 bg-slate-100 rounded">RuPay / Visa</span>
-                                        <span class="px-2 py-0.5 bg-slate-100 rounded">All Banks</span>
-                                    </div>
-                                </label>
-                            @endif
-
-                            <!-- Option 2: Direct UPI QR Code -->
-                            @if(!empty($paymentConfig['upi']['enabled']))
-                                <label class="block p-3.5 rounded-xl border-2 cursor-pointer transition-all"
-                                       :class="method === 'upi' ? 'border-blue-950 bg-blue-50/30 shadow-2xs' : 'border-slate-200 hover:border-slate-300 bg-white'">
-                                    <div class="flex items-center space-x-3">
-                                        <input type="radio" name="payment_choice" value="upi" x-model="method" class="w-4 h-4 text-blue-950 focus:ring-blue-950">
                                         <div>
-                                            <div class="flex items-center space-x-2">
-                                                <span class="text-sm font-bold text-slate-900">Direct UPI &amp; QR Code</span>
-                                            </div>
-                                            <p class="text-xs text-slate-500 mt-0.5">Scan official academy QR with any UPI app</p>
+                                            <h3 class="text-sm font-bold text-slate-900">Online Payment Gateway</h3>
+                                            <p class="text-xs text-slate-500">Fast, encrypted and 100% secure checkout via Razorpay</p>
                                         </div>
                                     </div>
 
-                                    <!-- Expandable Direct UPI Details -->
-                                    <div x-show="method === 'upi'" x-transition class="mt-3 pt-3 border-t border-slate-200/80">
-                                        <div class="flex flex-col sm:flex-row items-center gap-4 bg-white p-3 rounded-lg border border-slate-200">
-                                            <div class="w-32 h-32 bg-slate-50 p-1.5 rounded-lg border border-slate-200 shrink-0">
-                                                <img :src="upiQrUrl" alt="Academy UPI QR" class="w-full h-full object-contain">
-                                            </div>
-                                            <div class="flex-1 space-y-2 text-xs text-center sm:text-left w-full">
-                                                <div>
-                                                    <span class="text-[10px] uppercase font-bold text-slate-400 block">Official UPI ID</span>
-                                                    <span class="font-mono font-bold text-slate-900 text-sm block">{{ $paymentConfig['upi']['vpa'] ?? 'nirmaanacademy@icici' }}</span>
-                                                </div>
-                                                <button type="button" @click="copyVpa()" 
-                                                        class="px-3 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-950 text-xs font-bold border border-blue-200 transition-colors inline-flex items-center space-x-1">
-                                                    <span x-text="copiedVpa ? '✓ Copied!' : 'Copy UPI ID'">Copy UPI ID</span>
-                                                </button>
-                                                <p class="text-[11px] text-slate-500">{{ $paymentConfig['upi']['instructions'] ?? '' }}</p>
-                                            </div>
+                                    <span class="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md hidden sm:inline-block">
+                                        RBI Regulated
+                                    </span>
+                                </div>
+
+                                <!-- Accepted Payment Methods inside Razorpay -->
+                                <div class="pt-2.5 border-t border-slate-200/80 space-y-2">
+                                    <span class="text-[11px] font-semibold text-slate-600 block">Accepted payment options inside Razorpay modal:</span>
+                                    
+                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                                        <div class="p-2 rounded-lg bg-white border border-slate-200/90 shadow-2xs">
+                                            <span class="font-bold text-blue-950 block text-[11px]">Instant UPI</span>
+                                            <span class="text-[10px] text-slate-500">GPay, PhonePe, Paytm</span>
+                                        </div>
+                                        <div class="p-2 rounded-lg bg-white border border-slate-200/90 shadow-2xs">
+                                            <span class="font-bold text-blue-950 block text-[11px]">Cards</span>
+                                            <span class="text-[10px] text-slate-500">RuPay, Visa, Master</span>
+                                        </div>
+                                        <div class="p-2 rounded-lg bg-white border border-slate-200/90 shadow-2xs">
+                                            <span class="font-bold text-blue-950 block text-[11px]">Net Banking</span>
+                                            <span class="text-[10px] text-slate-500">All 50+ Banks</span>
+                                        </div>
+                                        <div class="p-2 rounded-lg bg-white border border-slate-200/90 shadow-2xs">
+                                            <span class="font-bold text-blue-950 block text-[11px]">Wallets / EMI</span>
+                                            <span class="text-[10px] text-slate-500">Easy Installments</span>
                                         </div>
                                     </div>
-                                </label>
-                            @endif
+                                </div>
 
-                            <!-- Option 3: Direct Bank Wire (IMPS / NEFT) -->
-                            @if(!empty($paymentConfig['bank']['enabled']))
-                                <label class="block p-3.5 rounded-xl border-2 cursor-pointer transition-all"
-                                       :class="method === 'bank' ? 'border-blue-950 bg-blue-50/30 shadow-2xs' : 'border-slate-200 hover:border-slate-300 bg-white'">
-                                     <div class="flex items-center space-x-3">
-                                         <input type="radio" name="payment_choice" value="bank" x-model="method" class="w-4 h-4 text-blue-950 focus:ring-blue-950">
-                                         <div>
-                                             <span class="text-sm font-bold text-slate-900">Direct Bank Transfer (IMPS / NEFT)</span>
-                                             <p class="text-xs text-slate-500 mt-0.5">Wire directly to {{ $paymentConfig['bank']['bank_name'] ?? $paymentConfig['bank']['name'] ?? 'State Bank of India' }}</p>
-                                         </div>
-                                     </div>
+                            </div>
 
-                                     <!-- Expandable Bank Account Details -->
-                                     <div x-show="method === 'bank'" x-transition class="mt-3 pt-3 border-t border-slate-200/80 space-y-2.5">
-                                         <div class="bg-white p-3 rounded-lg border border-slate-200 text-xs space-y-1.5 font-mono">
-                                             <div class="flex justify-between">
-                                                 <span class="text-slate-500">Bank:</span>
-                                                 <span class="font-bold text-slate-900">{{ $paymentConfig['bank']['bank_name'] ?? $paymentConfig['bank']['name'] ?? 'State Bank of India' }}</span>
-                                             </div>
-                                             <div class="flex justify-between">
-                                                 <span class="text-slate-500">Account Name:</span>
-                                                 <span class="font-bold text-slate-900">{{ $paymentConfig['bank']['account_name'] ?? '' }}</span>
-                                             </div>
-                                             <div class="flex justify-between items-center">
-                                                 <span class="text-slate-500">Account No:</span>
-                                                 <div class="flex items-center space-x-1">
-                                                     <span class="font-bold text-slate-900">{{ $paymentConfig['bank']['account_number'] ?? '' }}</span>
-                                                     <button type="button" @click="copyBankField('{{ addslashes($paymentConfig['bank']['account_number'] ?? '') }}', 'acc')" class="text-blue-700 text-[10px] font-bold underline">
-                                                         <span x-text="copiedBankField === 'acc' ? 'Copied' : 'Copy'">Copy</span>
-                                                     </button>
-                                                 </div>
-                                             </div>
-                                             <div class="flex justify-between items-center">
-                                                 <span class="text-slate-500">IFSC Code:</span>
-                                                 <div class="flex items-center space-x-1">
-                                                     <span class="font-bold text-slate-900">{{ $paymentConfig['bank']['ifsc_code'] ?? '' }}</span>
-                                                     <button type="button" @click="copyBankField('{{ addslashes($paymentConfig['bank']['ifsc_code'] ?? '') }}', 'ifsc')" class="text-blue-700 text-[10px] font-bold underline">
-                                                         <span x-text="copiedBankField === 'ifsc' ? 'Copied' : 'Copy'">Copy</span>
-                                                     </button>
-                                                 </div>
-                                             </div>
-                                         </div>
+                            <!-- Trust Bullets -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 pt-1">
+                                <div class="flex items-center space-x-2">
+                                    <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                    <span>Immediate automated course unlock</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                    <span>GST tax invoice &amp; receipt provided</span>
+                                </div>
+                            </div>
 
-                                         <input type="text" x-model="bankUtr" placeholder="Enter Transfer UTR / Ref Number (Optional)"
-                                                class="w-full text-xs font-mono px-3 py-2 border border-slate-300 rounded-lg outline-none focus:ring-1 focus:ring-blue-950">
-                                     </div>
-                                 </label>
-                             @endif
-
-                             <!-- Option 4: Campus Admissions Desk (If Enabled) -->
-                             @if(!empty($paymentConfig['offline']['enabled']) || !empty($paymentConfig['methods']['offline']))
-                                 <label class="block p-3.5 rounded-xl border-2 cursor-pointer transition-all"
-                                        :class="method === 'offline' ? 'border-blue-950 bg-blue-50/30 shadow-2xs' : 'border-slate-200 hover:border-slate-300 bg-white'">
-                                     <div class="flex items-center space-x-3">
-                                         <input type="radio" name="payment_choice" value="offline" x-model="method" class="w-4 h-4 text-blue-950 focus:ring-blue-950">
-                                         <div>
-                                             <span class="text-sm font-bold text-slate-900">Academy Campus Desk</span>
-                                             <p class="text-xs text-slate-500 mt-0.5">Pay in cash or DD at admissions desk: {{ $paymentConfig['offline']['contact_phone'] ?? '' }}</p>
-                                         </div>
-                                     </div>
-                                 </label>
-                             @endif
-
-                             <!-- Option 5: Sandbox Test (If in Test Mode) -->
-                             @if(($razorpayConfig['mode'] ?? 'test') === 'test' || !empty($paymentConfig['razorpay']['fallback_simulation']))
-                                <label class="block p-3 rounded-xl border cursor-pointer transition-all"
-                                       :class="method === 'mock' ? 'border-emerald-600 bg-emerald-50/40' : 'border-slate-200 hover:border-slate-300 bg-white'">
-                                    <div class="flex items-center space-x-3">
-                                        <input type="radio" name="payment_choice" value="mock" x-model="method" class="w-4 h-4 text-emerald-600 focus:ring-emerald-600">
-                                        <div>
-                                            <span class="text-xs font-bold text-emerald-900">Instant Test Simulation (Sandbox)</span>
-                                            <span class="text-[11px] text-emerald-700 block">Instant access without real bank deduction</span>
-                                        </div>
-                                    </div>
-                                </label>
+                            @if(($razorpayConfig['mode'] ?? 'test') === 'test' || !empty($paymentConfig['razorpay']['fallback_simulation']))
+                                <div class="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center space-x-2">
+                                    <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                                    <span><strong>Sandbox Mode:</strong> Razorpay simulation enabled for safe test transactions.</span>
+                                </div>
                             @endif
 
                         </div>
@@ -496,12 +368,12 @@ function checkoutEngine() {
                         <div class="p-4 bg-slate-50 border-t border-slate-200/80">
                             <button type="submit" 
                                     :disabled="isProcessing"
-                                    class="w-full py-3.5 px-6 rounded-xl font-bold text-sm sm:text-base text-white bg-blue-950 hover:bg-blue-900 active:scale-[0.99] transition-all shadow-md hover:shadow-lg flex items-center justify-center space-x-2 disabled:opacity-60 cursor-pointer">
-                                <span>🔒 Pay ₹<span x-text="finalPayable.toFixed(2)">{{ number_format($price, 2) }}</span> &amp; Unlock Access Now</span>
+                                    class="w-full py-4 px-6 rounded-xl font-bold text-sm sm:text-base text-white bg-blue-950 hover:bg-blue-900 active:scale-[0.99] transition-all shadow-md hover:shadow-lg flex items-center justify-center space-x-2 disabled:opacity-60 cursor-pointer">
+                                <span>🔒 Pay ₹<span x-text="finalPayable.toFixed(2)">{{ number_format($price, 2) }}</span> via Razorpay</span>
                                 <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                             </button>
                             <p class="text-center text-[11px] text-slate-500 mt-2">
-                                Instant access unlocked immediately upon payment confirmation.
+                                Encrypted 256-Bit SSL Connection • Instant Access Unlocked
                             </p>
                         </div>
                     </div>
@@ -565,10 +437,7 @@ function checkoutEngine() {
                                 </div>
                             </div>
 
-                            <div class="flex justify-between text-slate-500 text-[11px]">
-                                <span>Taxes &amp; Surcharge:</span>
-                                <span class="text-emerald-700 font-bold">₹0.00 (Exempt)</span>
-                            </div>
+                      
 
                             <!-- Net Total -->
                             <div class="pt-2 border-t border-slate-200 flex items-baseline justify-between">
