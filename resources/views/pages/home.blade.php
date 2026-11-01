@@ -172,7 +172,7 @@
                 
                 <!-- Top & Bottom Gradient Masks for Smooth Dissolve -->
                 <div class="pointer-events-none absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white via-white/80 to-transparent z-20"></div>
-                <div class="pointer-events-none absolute inset-x-0 bottom-9 h-10 bg-gradient-to-t from-white via-white/80 to-transparent z-20"></div>
+                <div class="pointer-events-none absolute inset-x-0 h-12 bg-gradient-to-t from-white via-white/80 to-transparent z-20" style="bottom: 42px;"></div>
 
              
 
