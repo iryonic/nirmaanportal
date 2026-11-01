@@ -729,6 +729,9 @@ class DatabaseSeeder extends Seeder
             SiteSetting::set($k, $v);
         }
 
-        $this->call(PracticeQuestionsSeeder::class);
+        $this->call([
+            PracticeQuestionsSeeder::class,
+            NotificationSeeder::class,
+        ]);
     }
 }
