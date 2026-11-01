@@ -22,8 +22,9 @@
 
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
-<div class="py-8 sm:py-12 bg-gray-50 min-h-screen" 
-     x-data="{
+<script>
+function checkoutEngine() {
+    return {
         razorpayConfig: {!! $razorpayJson !!},
         method: '{{ ($razorpayConfig['enabled'] ?? true) ? 'razorpay' : 'upi' }}',
         basePrice: {{ $price }},
@@ -322,7 +323,11 @@
                 document.getElementById('checkout-form').submit();
             }, 1600);
         }
-     }">
+    };
+}
+</script>
+
+<div class="py-8 sm:py-12 bg-gray-50 min-h-screen" x-data="checkoutEngine()">
 
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
