@@ -4,7 +4,7 @@
 @section('header_title', 'Coupons & Discounts')
 
 @section('content')
-<div class="space-y-5">
+<div class="space-y-5" x-data="bulkActionManager({ allIds: {{ json_encode($coupons->pluck('id')) }}, actionUrl: '{{ route('admin.coupons.bulk') }}' })">
     
     <!-- Action Bar & Page Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white rounded-xl p-4 sm:p-5 border border-slate-200/80 shadow-2xs">
@@ -124,6 +124,13 @@
             <table class="w-full text-left border-collapse text-xs">
                 <thead>
                     <tr class="bg-slate-50 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <th class="py-3 px-3 w-10 text-center">
+                            <input type="checkbox" 
+                                   @change="toggleSelectAll()" 
+                                   :checked="isAllSelected()"
+                                   :indeterminate.prop="isIndeterminate()"
+                                   class="w-3.5 h-3.5 text-blue-900 border-slate-300 rounded focus:ring-blue-900/30 cursor-pointer">
+                        </th>
                         <th class="py-3 px-4">Coupon Code &amp; Campaign</th>
                         <th class="py-3 px-4">Concession Value</th>
                         <th class="py-3 px-4">Min. Order</th>
@@ -135,7 +142,13 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse($coupons as $coupon)
-                        <tr class="hover:bg-slate-50/75 transition-colors">
+                        <tr class="hover:bg-slate-50/75 transition-colors" :class="selected.includes({{ $coupon->id }}) ? 'bg-blue-50/30' : ''">
+                            <td class="py-3.5 px-3 text-center">
+                                <input type="checkbox" 
+                                       :value="{{ $coupon->id }}" 
+                                       x-model="selected" 
+                                       class="w-3.5 h-3.5 text-blue-900 border-slate-300 rounded focus:ring-blue-900/30 cursor-pointer">
+                            </td>
                             <!-- Code & Campaign -->
                             <td class="py-3.5 px-4">
                                 <div class="flex items-center space-x-2">
@@ -246,7 +259,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="py-12 text-center text-slate-500">
+                            <td colspan="8" class="py-12 text-center text-slate-500">
                                 <div class="max-w-xs mx-auto space-y-2">
                                     <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
@@ -270,6 +283,18 @@
             </div>
         @endif
     </div>
+
+    <!-- Reusable Bulk Action Bar Component -->
+    <x-bulk-action-bar 
+        :action-url="route('admin.coupons.bulk')"
+        item-name="Coupon" 
+        item-name-plural="Coupons"
+        :actions="[
+            ['name' => 'activate', 'label' => 'Activate', 'icon' => 'check', 'style' => 'success'],
+            ['name' => 'deactivate', 'label' => 'Deactivate', 'icon' => 'pause', 'style' => 'warning'],
+            ['name' => 'export', 'label' => 'Export CSV', 'icon' => 'download', 'style' => 'secondary'],
+            ['name' => 'delete', 'label' => 'Delete Selected', 'icon' => 'trash', 'style' => 'danger', 'confirm' => 'Are you sure you want to permanently delete the selected coupons?']
+        ]" />
 
 </div>
 @endsection

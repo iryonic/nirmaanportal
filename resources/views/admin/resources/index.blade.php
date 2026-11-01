@@ -4,7 +4,7 @@
 @section('header_title', 'Study Resources')
 
 @section('content')
-<div class="space-y-5">
+<div class="space-y-5" x-data="bulkActionManager({ allIds: {{ json_encode($resources->pluck('id')) }}, actionUrl: '{{ route('admin.resources.bulk') }}' })">
     
     <!-- Action Bar & Page Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white rounded-xl p-4 sm:p-5 border border-slate-200/80 shadow-2xs">
@@ -146,6 +146,13 @@
             <table class="w-full text-left text-xs">
                 <thead>
                     <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
+                        <th class="py-3 px-3 w-10 text-center">
+                            <input type="checkbox" 
+                                   @change="toggleSelectAll()" 
+                                   :checked="isAllSelected()"
+                                   :indeterminate.prop="isIndeterminate()"
+                                   class="w-3.5 h-3.5 text-blue-900 border-slate-300 rounded focus:ring-blue-900/30 cursor-pointer">
+                        </th>
                         <th class="py-3 px-4">Resource Details</th>
                         <th class="py-3 px-4">Category</th>
                         <th class="py-3 px-4">Type</th>
@@ -158,7 +165,13 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-slate-700">
                     @forelse($resources as $item)
-                        <tr class="hover:bg-slate-50/70 transition-colors">
+                        <tr class="hover:bg-slate-50/70 transition-colors" :class="selected.includes({{ $item->id }}) ? 'bg-blue-50/30' : ''">
+                            <td class="py-3.5 px-3 text-center">
+                                <input type="checkbox" 
+                                       :value="{{ $item->id }}" 
+                                       x-model="selected" 
+                                       class="w-3.5 h-3.5 text-blue-900 border-slate-300 rounded focus:ring-blue-900/30 cursor-pointer">
+                            </td>
                             
                             <!-- Title & Description -->
                             <td class="py-3.5 px-4 max-w-sm">
@@ -309,7 +322,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="py-12 text-center text-slate-400">
+                            <td colspan="9" class="py-12 text-center text-slate-400">
                                 <div class="max-w-xs mx-auto space-y-3">
                                     <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
                                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -335,6 +348,18 @@
             </div>
         @endif
     </div>
+
+    <!-- Reusable Bulk Action Bar Component -->
+    <x-bulk-action-bar 
+        :action-url="route('admin.resources.bulk')"
+        item-name="Resource" 
+        item-name-plural="Resources"
+        :actions="[
+            ['name' => 'publish', 'label' => 'Publish', 'icon' => 'check', 'style' => 'success'],
+            ['name' => 'draft', 'label' => 'Move to Draft', 'icon' => 'pause', 'style' => 'warning'],
+            ['name' => 'export', 'label' => 'Export CSV', 'icon' => 'download', 'style' => 'secondary'],
+            ['name' => 'delete', 'label' => 'Delete Selected', 'icon' => 'trash', 'style' => 'danger', 'confirm' => 'Are you sure you want to permanently delete the selected resources?']
+        ]" />
 
 </div>
 @endsection

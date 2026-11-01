@@ -4,7 +4,7 @@
 @section('header_title', 'Orders')
 
 @section('content')
-<div class="space-y-5">
+<div class="space-y-5" x-data="bulkActionManager({ allIds: {{ json_encode($orders->pluck('id')) }}, actionUrl: '{{ route('admin.orders.bulk') }}' })">
     
     <!-- Action Bar & Financial Summary Metric Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
@@ -87,6 +87,13 @@
             <table class="w-full text-left text-xs text-slate-600">
                 <thead class="bg-slate-50/75 text-slate-500 uppercase text-[10px] font-semibold tracking-wider border-b border-slate-200/80">
                     <tr>
+                        <th class="px-3 py-2.5 w-10 text-center">
+                            <input type="checkbox" 
+                                   @change="toggleSelectAll()" 
+                                   :checked="isAllSelected()"
+                                   :indeterminate.prop="isIndeterminate()"
+                                   class="w-3.5 h-3.5 text-blue-900 border-slate-300 rounded focus:ring-blue-900/30 cursor-pointer">
+                        </th>
                         <th class="px-4 py-2.5 whitespace-nowrap">Order Number</th>
                         <th class="px-4 py-2.5 whitespace-nowrap">Cadet Details</th>
                         <th class="px-4 py-2.5 whitespace-nowrap">Item Description</th>
@@ -99,7 +106,13 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse($orders as $ord)
-                        <tr class="hover:bg-slate-50/70 transition-colors">
+                        <tr class="hover:bg-slate-50/70 transition-colors" :class="selected.includes({{ $ord->id }}) ? 'bg-blue-50/30' : ''">
+                            <td class="px-3 py-3 text-center">
+                                <input type="checkbox" 
+                                       :value="{{ $ord->id }}" 
+                                       x-model="selected" 
+                                       class="w-3.5 h-3.5 text-blue-900 border-slate-300 rounded focus:ring-blue-900/30 cursor-pointer">
+                            </td>
                             <!-- Order Number -->
                             <td class="px-4 py-3 whitespace-nowrap font-mono font-medium text-slate-900">
                                 <a href="{{ route('admin.orders.show', $ord->id) }}" class="hover:text-blue-950 transition-colors">
@@ -181,7 +194,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="py-12 text-center text-xs text-slate-400">No transactions recorded.</td>
+                            <td colspan="9" class="py-12 text-center text-xs text-slate-400">No transactions recorded.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -194,6 +207,18 @@
             </div>
         @endif
     </div>
+
+    <!-- Reusable Bulk Action Bar Component -->
+    <x-bulk-action-bar 
+        :action-url="route('admin.orders.bulk')"
+        item-name="Order" 
+        item-name-plural="Orders"
+        :actions="[
+            ['name' => 'mark_paid', 'label' => 'Mark as Paid', 'icon' => 'check', 'style' => 'success', 'confirm' => 'Mark selected orders as paid and verify enrollments?'],
+            ['name' => 'mark_pending', 'label' => 'Mark as Pending', 'icon' => 'pause', 'style' => 'warning'],
+            ['name' => 'export', 'label' => 'Export CSV', 'icon' => 'download', 'style' => 'secondary'],
+            ['name' => 'delete', 'label' => 'Delete Selected', 'icon' => 'trash', 'style' => 'danger', 'confirm' => 'Are you sure you want to permanently delete the selected orders? This cannot be undone.']
+        ]" />
 
 </div>
 @endsection

@@ -290,4 +290,55 @@ class CourseManagementController extends Controller
         $label = $course->is_published ? 'published' : 'moved to draft';
         return back()->with('success', "Course batch '{$course->title}' has been {$label}.");
     }
+
+    public function bulk(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer', 'exists:courses,id'],
+            'action' => ['required', 'string', 'in:publish,unpublish,delete,export'],
+        ]);
+
+        $ids = $validated['ids'];
+        $count = count($ids);
+
+        switch ($validated['action']) {
+            case 'publish':
+                Course::whereIn('id', $ids)->update(['is_published' => true]);
+                return back()->with('success', "{$count} courses were published successfully.");
+
+            case 'unpublish':
+                Course::whereIn('id', $ids)->update(['is_published' => false]);
+                return back()->with('success', "{$count} courses moved to draft.");
+
+            case 'delete':
+                Course::whereIn('id', $ids)->delete();
+                return back()->with('success', "{$count} courses were deleted successfully.");
+
+            case 'export':
+                $courses = Course::with('examCategory')->whereIn('id', $ids)->get();
+                $filename = 'courses_export_' . now()->format('Ymd_His') . '.csv';
+
+                return response()->streamDownload(function () use ($courses) {
+                    $handle = fopen('php://output', 'w');
+                    fputcsv($handle, ['ID', 'Title', 'Category', 'Price', 'Original Price', 'Status', 'Created Date']);
+
+                    foreach ($courses as $c) {
+                        fputcsv($handle, [
+                            $c->id,
+                            $c->title,
+                            $c->examCategory ? $c->examCategory->name : 'N/A',
+                            $c->price,
+                            $c->original_price ?? '',
+                            $c->is_published ? 'Published' : 'Draft',
+                            $c->created_at->format('Y-m-d H:i:s'),
+                        ]);
+                    }
+                    fclose($handle);
+                }, $filename, ['Content-Type' => 'text/csv']);
+
+            default:
+                return back()->with('error', 'Unknown bulk action.');
+        }
+    }
 }

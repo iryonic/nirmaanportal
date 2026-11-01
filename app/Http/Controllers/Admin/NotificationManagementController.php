@@ -322,4 +322,57 @@ class NotificationManagementController extends Controller
         }
         return $bytes . ' B';
     }
+
+    public function bulk(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer', 'exists:notifications,id'],
+            'action' => ['required', 'string', 'in:publish,draft,delete,export'],
+        ]);
+
+        $ids = $validated['ids'];
+        $count = count($ids);
+
+        switch ($validated['action']) {
+            case 'publish':
+                Notification::whereIn('id', $ids)->update(['is_published' => true, 'published_at' => now()]);
+                return back()->with('success', "{$count} notices were published successfully.");
+
+            case 'draft':
+                Notification::whereIn('id', $ids)->update(['is_published' => false, 'published_at' => null]);
+                return back()->with('success', "{$count} notices were saved as draft.");
+
+            case 'delete':
+                Notification::whereIn('id', $ids)->delete();
+                return back()->with('success', "{$count} notices were deleted successfully.");
+
+            case 'export':
+                $notices = Notification::whereIn('id', $ids)->get();
+                $filename = 'notifications_export_' . now()->format('Ymd_His') . '.csv';
+
+                return response()->streamDownload(function () use ($notices) {
+                    $handle = fopen('php://output', 'w');
+                    fputcsv($handle, ['ID', 'Title', 'Category', 'Priority', 'Is Pinned', 'Status', 'Published At', 'Expires At', 'Created Date']);
+
+                    foreach ($notices as $n) {
+                        fputcsv($handle, [
+                            $n->id,
+                            $n->title,
+                            $n->category,
+                            strtoupper($n->priority),
+                            $n->is_pinned ? 'Yes' : 'No',
+                            $n->is_published ? 'Published' : 'Draft',
+                            $n->published_at ? $n->published_at->format('Y-m-d H:i:s') : 'N/A',
+                            $n->expires_at ? $n->expires_at->format('Y-m-d H:i:s') : 'N/A',
+                            $n->created_at->format('Y-m-d H:i:s'),
+                        ]);
+                    }
+                    fclose($handle);
+                }, $filename, ['Content-Type' => 'text/csv']);
+
+            default:
+                return back()->with('error', 'Unknown bulk action.');
+        }
+    }
 }

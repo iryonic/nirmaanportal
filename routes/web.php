@@ -117,6 +117,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
     // Courses & Curriculum Management
+    Route::post('/courses/bulk', [CourseManagementController::class, 'bulk'])->name('courses.bulk');
     Route::resource('courses', CourseManagementController::class);
     Route::post('/courses/{course}/toggle', [CourseManagementController::class, 'toggleStatus'])->name('courses.toggle');
     Route::post('/courses/{course}/import-playlist', [CourseManagementController::class, 'importPlaylist'])->name('courses.import-playlist');
@@ -126,6 +127,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::delete('/lessons/{lesson}', [CourseManagementController::class, 'destroyLesson'])->name('courses.lessons.destroy');
 
     // Study Resources & Materials Management
+    Route::post('/resources/bulk', [ResourceManagementController::class, 'bulk'])->name('resources.bulk');
     Route::resource('resources', ResourceManagementController::class);
     Route::post('/resources/{resource}/toggle', [ResourceManagementController::class, 'toggleStatus'])->name('resources.toggle');
     Route::get('/resources/{resource}/download', [ResourceManagementController::class, 'download'])->name('resources.download');
@@ -135,6 +137,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::resource('questions', QuestionManagementController::class);
 
     // Mock Test Management
+    Route::post('/tests/bulk', [MockTestManagementController::class, 'bulk'])->name('tests.bulk');
     Route::resource('tests', MockTestManagementController::class);
     Route::post('/tests/{test}/toggle', [MockTestManagementController::class, 'toggleStatus'])->name('tests.toggle');
     Route::get('/tests/{test}/attempts', [MockTestManagementController::class, 'attempts'])->name('tests.attempts');
@@ -147,10 +150,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::post('/students/{student}/enroll', [StudentManagementController::class, 'manualEnroll'])->name('students.enroll');
 
     // Order & Financial Audits
+    Route::post('/orders/bulk', [OrderManagementController::class, 'bulk'])->name('orders.bulk');
     Route::get('/orders', [OrderManagementController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderManagementController::class, 'show'])->name('orders.show');
 
     // Coupon & Scholarship Discounts Management
+    Route::post('/coupons/bulk', [CouponManagementController::class, 'bulk'])->name('coupons.bulk');
     Route::resource('coupons', CouponManagementController::class);
     Route::post('/coupons/{coupon}/toggle', [CouponManagementController::class, 'toggleStatus'])->name('coupons.toggle');
 
@@ -163,6 +168,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::post('/content/inquiries/{inquiry}/toggle', [ContentManagementController::class, 'toggleInquiry'])->name('content.inquiries.toggle');
 
     // Notice Board & Notification Management
+    Route::post('/notifications/bulk', [NotificationManagementController::class, 'bulk'])->name('notifications.bulk');
     Route::resource('notifications', NotificationManagementController::class);
     Route::post('/notifications/{notification}/toggle', [NotificationManagementController::class, 'toggleStatus'])->name('notifications.toggle');
 

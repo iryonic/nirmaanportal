@@ -4,7 +4,7 @@
 @section('header_title', 'Course Batches & Curricula')
 
 @section('content')
-<div class="space-y-5">
+<div class="space-y-5" x-data="bulkActionManager({ allIds: {{ json_encode($courses->pluck('id')) }}, actionUrl: '{{ route('admin.courses.bulk') }}' })">
     
     <!-- Action Bar & Page Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white rounded-xl p-4 sm:p-5 border border-slate-200/80 shadow-2xs">
@@ -76,6 +76,9 @@
             <table class="w-full text-left text-xs text-slate-600">
                 <thead class="bg-slate-50/75 text-slate-500 uppercase text-[10px] font-semibold tracking-wider border-b border-slate-200/80">
                     <tr>
+                        <th class="w-10 px-3 py-2.5 text-center">
+                            <input type="checkbox" @change="toggleSelectAll()" :checked="isAllSelected()" class="w-4 h-4 rounded text-blue-950 border-slate-300 focus:ring-blue-950/20 cursor-pointer">
+                        </th>
                         <th class="px-4 py-2.5 whitespace-nowrap">Batch Title</th>
                         <th class="px-4 py-2.5 whitespace-nowrap">Branch / Wing</th>
                         <th class="px-4 py-2.5 whitespace-nowrap">Price</th>
@@ -87,7 +90,12 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse($courses as $c)
-                        <tr class="hover:bg-slate-50/70 transition-colors">
+                        <tr class="hover:bg-slate-50/70 transition-colors" :class="selected.includes({{ $c->id }}) ? 'bg-blue-50/30' : ''">
+                            <!-- Row Selection Checkbox -->
+                            <td class="w-10 px-3 py-3 text-center">
+                                <input type="checkbox" :value="{{ $c->id }}" x-model="selected" class="w-4 h-4 rounded text-blue-950 border-slate-300 focus:ring-blue-950/20 cursor-pointer">
+                            </td>
+
                             <!-- Batch Title -->
                             <td class="px-4 py-3 whitespace-nowrap font-medium text-slate-900">
                                 <a href="{{ route('admin.courses.edit', $c->id) }}" class="hover:text-blue-950 transition-colors font-semibold text-xs block">
@@ -151,7 +159,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="py-12 text-center text-xs text-slate-400">
+                            <td colspan="8" class="py-12 text-center text-xs text-slate-400">
                                 <svg class="w-8 h-8 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
                                 No course batches found matching your search.
                             </td>
@@ -167,6 +175,18 @@
             </div>
         @endif
     </div>
+
+    <!-- Reusable Bulk Action Bar Component -->
+    <x-bulk-action-bar 
+        :action-url="route('admin.courses.bulk')"
+        item-name="Course" 
+        item-name-plural="Courses"
+        :actions="[
+            ['name' => 'publish', 'label' => 'Publish', 'icon' => 'check', 'style' => 'success'],
+            ['name' => 'unpublish', 'label' => 'Move to Draft', 'icon' => 'pause', 'style' => 'warning'],
+            ['name' => 'export', 'label' => 'Export CSV', 'icon' => 'download', 'style' => 'secondary'],
+            ['name' => 'delete', 'label' => 'Delete Selected', 'icon' => 'trash', 'style' => 'danger', 'confirm' => 'Are you sure you want to permanently delete the selected courses?']
+        ]" />
 
 </div>
 @endsection

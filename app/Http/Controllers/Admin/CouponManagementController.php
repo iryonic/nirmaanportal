@@ -190,4 +190,57 @@ class CouponManagementController extends Controller
 
         return back()->with('success', "Coupon '{$coupon->code}' has been {$statusText}.");
     }
+
+    public function bulk(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer', 'exists:coupons,id'],
+            'action' => ['required', 'string', 'in:activate,deactivate,delete,export'],
+        ]);
+
+        $ids = $validated['ids'];
+        $count = count($ids);
+
+        switch ($validated['action']) {
+            case 'activate':
+                Coupon::whereIn('id', $ids)->update(['is_active' => true]);
+                return back()->with('success', "{$count} coupons were activated.");
+
+            case 'deactivate':
+                Coupon::whereIn('id', $ids)->update(['is_active' => false]);
+                return back()->with('success', "{$count} coupons were deactivated.");
+
+            case 'delete':
+                Coupon::whereIn('id', $ids)->delete();
+                return back()->with('success', "{$count} coupons were deleted successfully.");
+
+            case 'export':
+                $coupons = Coupon::whereIn('id', $ids)->get();
+                $filename = 'coupons_export_' . now()->format('Ymd_His') . '.csv';
+
+                return response()->streamDownload(function () use ($coupons) {
+                    $handle = fopen('php://output', 'w');
+                    fputcsv($handle, ['ID', 'Code', 'Discount Type', 'Value', 'Min Order', 'Redemptions', 'Max Uses', 'Status', 'Expiry Date']);
+
+                    foreach ($coupons as $c) {
+                        fputcsv($handle, [
+                            $c->id,
+                            $c->code,
+                            $c->type,
+                            $c->value,
+                            $c->min_order_amount ?? 0,
+                            $c->used_count ?? 0,
+                            $c->max_uses ?? 'Unlimited',
+                            $c->is_active ? 'Active' : 'Inactive',
+                            $c->expires_at ? $c->expires_at->format('Y-m-d H:i:s') : 'Never',
+                        ]);
+                    }
+                    fclose($handle);
+                }, $filename, ['Content-Type' => 'text/csv']);
+
+            default:
+                return back()->with('error', 'Unknown bulk action.');
+        }
+    }
 }

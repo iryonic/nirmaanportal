@@ -4,7 +4,7 @@
 @section('header_title', 'Mock Test Management')
 
 @section('content')
-<div class="space-y-5">
+<div class="space-y-5" x-data="bulkActionManager({ allIds: {{ json_encode($tests->pluck('id')) }}, actionUrl: '{{ route('admin.tests.bulk') }}' })">
     
     <!-- Action Bar & Page Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white rounded-xl p-4 sm:p-5 border border-slate-200/80 shadow-2xs">
@@ -70,6 +70,13 @@
             <table class="w-full text-left text-xs text-slate-600">
                 <thead class="bg-slate-50/75 text-slate-500 uppercase text-[10px] font-semibold tracking-wider border-b border-slate-200/80">
                     <tr>
+                        <th class="px-3 py-2.5 w-10 text-center">
+                            <input type="checkbox" 
+                                   @change="toggleSelectAll()" 
+                                   :checked="isAllSelected()"
+                                   :indeterminate.prop="isIndeterminate()"
+                                   class="w-3.5 h-3.5 text-blue-900 border-slate-300 rounded focus:ring-blue-900/30 cursor-pointer">
+                        </th>
                         <th class="px-4 py-2.5 whitespace-nowrap">Test Series Title</th>
                         <th class="px-4 py-2.5 whitespace-nowrap">Category</th>
                         <th class="px-4 py-2.5 whitespace-nowrap">Duration</th>
@@ -83,7 +90,13 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse($tests as $t)
-                        <tr class="hover:bg-slate-50/70 transition-colors">
+                        <tr class="hover:bg-slate-50/70 transition-colors" :class="selected.includes({{ $t->id }}) ? 'bg-blue-50/30' : ''">
+                            <td class="px-3 py-3 text-center">
+                                <input type="checkbox" 
+                                       :value="{{ $t->id }}" 
+                                       x-model="selected" 
+                                       class="w-3.5 h-3.5 text-blue-900 border-slate-300 rounded focus:ring-blue-900/30 cursor-pointer">
+                            </td>
                             <!-- Title -->
                             <td class="px-4 py-3 whitespace-nowrap font-medium text-slate-900">
                                 <a href="{{ route('admin.tests.edit', $t->id) }}" class="hover:text-blue-950 transition-colors font-semibold text-xs block">
@@ -162,7 +175,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="py-12 text-center text-xs text-slate-400">
+                            <td colspan="10" class="py-12 text-center text-xs text-slate-400">
                                 <svg class="w-8 h-8 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                 No CBT mock tests found matching your search.
                             </td>
@@ -178,6 +191,18 @@
             </div>
         @endif
     </div>
+
+    <!-- Reusable Bulk Action Bar Component -->
+    <x-bulk-action-bar 
+        :action-url="route('admin.tests.bulk')"
+        item-name="Test" 
+        item-name-plural="Tests"
+        :actions="[
+            ['name' => 'publish', 'label' => 'Publish', 'icon' => 'check', 'style' => 'success'],
+            ['name' => 'unpublish', 'label' => 'Move to Draft', 'icon' => 'pause', 'style' => 'warning'],
+            ['name' => 'export', 'label' => 'Export CSV', 'icon' => 'download', 'style' => 'secondary'],
+            ['name' => 'delete', 'label' => 'Delete Selected', 'icon' => 'trash', 'style' => 'danger', 'confirm' => 'Are you sure you want to permanently delete the selected tests and all candidate attempts?']
+        ]" />
 
 </div>
 @endsection

@@ -133,4 +133,56 @@ class MockTestManagementController extends Controller
         $label = $test->is_published ? 'published (live for candidates)' : 'moved to draft';
         return back()->with('success', "Mock test '{$test->title}' has been {$label}.");
     }
+
+    public function bulk(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer', 'exists:mock_tests,id'],
+            'action' => ['required', 'string', 'in:publish,unpublish,delete,export'],
+        ]);
+
+        $ids = $validated['ids'];
+        $count = count($ids);
+
+        switch ($validated['action']) {
+            case 'publish':
+                MockTest::whereIn('id', $ids)->update(['is_published' => true]);
+                return back()->with('success', "{$count} mock tests were published successfully.");
+
+            case 'unpublish':
+                MockTest::whereIn('id', $ids)->update(['is_published' => false]);
+                return back()->with('success', "{$count} mock tests moved to draft.");
+
+            case 'delete':
+                MockTest::whereIn('id', $ids)->delete();
+                return back()->with('success', "{$count} mock tests were deleted successfully.");
+
+            case 'export':
+                $tests = MockTest::with('examCategory')->whereIn('id', $ids)->get();
+                $filename = 'tests_export_' . now()->format('Ymd_His') . '.csv';
+
+                return response()->streamDownload(function () use ($tests) {
+                    $handle = fopen('php://output', 'w');
+                    fputcsv($handle, ['ID', 'Title', 'Category', 'Duration (mins)', 'Total Marks', 'Pass Marks', 'Status', 'Created Date']);
+
+                    foreach ($tests as $t) {
+                        fputcsv($handle, [
+                            $t->id,
+                            $t->title,
+                            $t->examCategory ? $t->examCategory->name : 'N/A',
+                            $t->duration_minutes,
+                            $t->total_marks,
+                            $t->pass_marks,
+                            $t->is_published ? 'Published' : 'Draft',
+                            $t->created_at->format('Y-m-d H:i:s'),
+                        ]);
+                    }
+                    fclose($handle);
+                }, $filename, ['Content-Type' => 'text/csv']);
+
+            default:
+                return back()->with('error', 'Unknown bulk action.');
+        }
+    }
 }

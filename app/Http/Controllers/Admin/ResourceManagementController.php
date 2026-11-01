@@ -349,4 +349,56 @@ class ResourceManagementController extends Controller
 
         return $slug;
     }
+
+    public function bulk(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer', 'exists:study_materials,id'],
+            'action' => ['required', 'string', 'in:publish,draft,delete,export'],
+        ]);
+
+        $ids = $validated['ids'];
+        $count = count($ids);
+
+        switch ($validated['action']) {
+            case 'publish':
+                StudyMaterial::whereIn('id', $ids)->update(['is_published' => true]);
+                return back()->with('success', "{$count} study materials were published successfully.");
+
+            case 'draft':
+                StudyMaterial::whereIn('id', $ids)->update(['is_published' => false]);
+                return back()->with('success', "{$count} study materials moved to draft.");
+
+            case 'delete':
+                StudyMaterial::whereIn('id', $ids)->delete();
+                return back()->with('success', "{$count} study materials were deleted successfully.");
+
+            case 'export':
+                $materials = StudyMaterial::with('examCategory')->whereIn('id', $ids)->get();
+                $filename = 'resources_export_' . now()->format('Ymd_His') . '.csv';
+
+                return response()->streamDownload(function () use ($materials) {
+                    $handle = fopen('php://output', 'w');
+                    fputcsv($handle, ['ID', 'Title', 'Category', 'Type', 'File Name', 'Downloads', 'Status', 'Created Date']);
+
+                    foreach ($materials as $m) {
+                        fputcsv($handle, [
+                            $m->id,
+                            $m->title,
+                            $m->examCategory ? $m->examCategory->name : 'N/A',
+                            $m->type,
+                            $m->file_name ?? 'N/A',
+                            $m->downloads_count ?? 0,
+                            $m->is_published ? 'Published' : 'Draft',
+                            $m->created_at->format('Y-m-d H:i:s'),
+                        ]);
+                    }
+                    fclose($handle);
+                }, $filename, ['Content-Type' => 'text/csv']);
+
+            default:
+                return back()->with('error', 'Unknown bulk action.');
+        }
+    }
 }
