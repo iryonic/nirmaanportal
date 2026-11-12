@@ -14,6 +14,11 @@ class PracticeQuestionsSeeder extends Seeder
      */
     public function run(): void
     {
+        // Prevent duplicate insertion if already seeded
+        if (Question::count() >= 50) {
+            return;
+        }
+
         if (ExamCategory::count() === 0) {
             ExamCategory::firstOrCreate(
                 ['slug' => 'nda'],

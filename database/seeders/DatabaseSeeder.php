@@ -361,17 +361,19 @@ class DatabaseSeeder extends Seeder
         $firstLesson = null;
         $allLessons = [];
         foreach ($modulesData as $mIndex => $mItem) {
-            $mod = CourseModule::create([
+            $mod = CourseModule::firstOrCreate([
                 'course_id' => $armyCourse->id,
                 'title' => $mItem['title'],
+            ], [
                 'description' => $mItem['description'],
                 'sort_order' => $mIndex + 1,
             ]);
 
             foreach ($mItem['lessons'] as $lIndex => $lItem) {
-                $lesson = Lesson::create([
+                $lesson = Lesson::firstOrCreate([
                     'course_module_id' => $mod->id,
                     'title' => $lItem['title'],
+                ], [
                     'duration_minutes' => $lItem['duration'],
                     'video_provider' => 'youtube',
                     'video_id' => $lItem['video_id'],
@@ -389,15 +391,17 @@ class DatabaseSeeder extends Seeder
 
         // Also add modules to Air Force course
         $afCourse = $createdCourses[2];
-        $afMod = CourseModule::create([
+        $afMod = CourseModule::firstOrCreate([
             'course_id' => $afCourse->id,
             'title' => 'Module 1: Agniveervayu Airmen Foundation',
+        ], [
             'description' => 'Core concepts for Science and Other Than Science streams.',
             'sort_order' => 1,
         ]);
-        Lesson::create([
+        Lesson::firstOrCreate([
             'course_module_id' => $afMod->id,
             'title' => 'Airforce Group X & Y Exam Pattern Breakdown',
+        ], [
             'duration_minutes' => 30,
             'video_provider' => 'youtube',
             'video_id' => '3JZ_D3ELwOQ',
@@ -405,9 +409,10 @@ class DatabaseSeeder extends Seeder
             'attachment_title' => 'IAF_Group_X_Y_Syllabus.pdf',
             'sort_order' => 1,
         ]);
-        Lesson::create([
+        Lesson::firstOrCreate([
             'course_module_id' => $afMod->id,
             'title' => 'RAGA (Reasoning and General Awareness) Strategy',
+        ], [
             'duration_minutes' => 45,
             'video_provider' => 'youtube',
             'video_id' => 'L_LUpnjgPso',
@@ -417,9 +422,10 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // 5. Enroll Student into Army Course & create order
-        $order = Order::create([
+        $order = Order::firstOrCreate([
             'user_id' => $student->id,
             'course_id' => $armyCourse->id,
+        ], [
             'order_number' => 'NIR-ORD-' . strtoupper(Str::random(8)),
             'amount' => 2999.00,
             'currency' => 'INR',
@@ -430,9 +436,10 @@ class DatabaseSeeder extends Seeder
             'notes' => 'Enrolled via Online Gateway Checkout',
         ]);
 
-        Enrollment::create([
+        Enrollment::firstOrCreate([
             'user_id' => $student->id,
             'course_id' => $armyCourse->id,
+        ], [
             'order_id' => $order->id,
             'status' => 'active',
             'enrolled_at' => now()->subDays(3),
@@ -441,14 +448,16 @@ class DatabaseSeeder extends Seeder
 
         // Mark first 2 lessons as completed to show real progress
         if (count($allLessons) >= 2) {
-            LessonCompletion::create([
+            LessonCompletion::firstOrCreate([
                 'user_id' => $student->id,
                 'lesson_id' => $allLessons[0]->id,
+            ], [
                 'completed_at' => now()->subDays(2),
             ]);
-            LessonCompletion::create([
+            LessonCompletion::firstOrCreate([
                 'user_id' => $student->id,
                 'lesson_id' => $allLessons[1]->id,
+            ], [
                 'completed_at' => now()->subDay(),
             ]);
         }
@@ -580,12 +589,13 @@ class DatabaseSeeder extends Seeder
         $savedQuestions = [];
         $armyCategory = $createdCategories['ARMY'];
         foreach ($questionsData as $qData) {
-            $savedQuestions[] = Question::create([
+            $savedQuestions[] = Question::firstOrCreate([
                 'exam_category_id' => $armyCategory->id,
+                'question_text' => $qData['question_text'],
+            ], [
                 'subject' => $qData['subject'],
                 'topic' => $qData['topic'],
                 'difficulty' => $qData['difficulty'],
-                'question_text' => $qData['question_text'],
                 'option_a' => $qData['option_a'],
                 'option_b' => $qData['option_b'],
                 'option_c' => $qData['option_c'],
@@ -599,10 +609,11 @@ class DatabaseSeeder extends Seeder
         }
 
         // 7. Mock Tests
-        $mockTest1 = MockTest::create([
+        $mockTest1 = MockTest::firstOrCreate([
+            'slug' => 'army-agniveer-gd-mock-test-01',
+        ], [
             'exam_category_id' => $armyCategory->id,
             'title' => 'Indian Army Agniveer GD Full Pattern Mock Test 01',
-            'slug' => 'army-agniveer-gd-mock-test-01',
             'description' => 'Real-time simulated exam strictly adhering to the latest Indian Army Agniveer computer-based test pattern with negative marking.',
             'duration_minutes' => 60,
             'total_marks' => 20.00,
@@ -614,13 +625,14 @@ class DatabaseSeeder extends Seeder
         ]);
 
         foreach ($savedQuestions as $index => $q) {
-            $mockTest1->questions()->attach($q->id, ['sort_order' => $index + 1]);
+            $mockTest1->questions()->syncWithoutDetaching([$q->id => ['sort_order' => $index + 1]]);
         }
 
-        $mockTest2 = MockTest::create([
+        $mockTest2 = MockTest::firstOrCreate([
+            'slug' => 'iaf-agniveervayu-science-mock-01',
+        ], [
             'exam_category_id' => $createdCategories['AIRFORCE']->id,
             'title' => 'Indian Air Force Agniveervayu Science Mock Test 01',
-            'slug' => 'iaf-agniveervayu-science-mock-01',
             'description' => 'Specialized speed test covering Physics, Mathematics, and English for Group X Airmen aspirants.',
             'duration_minutes' => 60,
             'total_marks' => 10.00,
@@ -632,7 +644,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         foreach (array_slice($savedQuestions, 0, 5) as $index => $q) {
-            $mockTest2->questions()->attach($q->id, ['sort_order' => $index + 1]);
+            $mockTest2->questions()->syncWithoutDetaching([$q->id => ['sort_order' => $index + 1]]);
         }
 
         // 8. Study Materials
